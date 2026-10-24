@@ -36424,6 +36424,18 @@ struct PmTilesArchive {
 static constexpr int kPmTilesMax = 16;
 static PmTilesArchive* s_pmtiles = nullptr;   // kPmTilesMax entries, PSRAM, sorted by name
 static int  s_pmtiles_count = 0;
+// Folders under /maps that hold a .pmtiles we could not use, so the picker can say
+// why instead of just leaving them out.
+enum PmTilesProbeResult : uint8_t {
+  kPmProbeOk, kPmProbeMissing, kPmProbeNotV3, kPmProbeNotPng, kPmProbeTruncated, kPmProbeMisnamed
+};
+struct PmTilesProblem {
+  char name[TOUCH_MAP_PMTILES_MAXLEN];
+  PmTilesProbeResult result;
+};
+static constexpr int kPmTilesProblemsMax = 6;
+static PmTilesProblem* s_pmtiles_problems = nullptr;   // PSRAM, filled by pmTilesScan
+static int s_pmtiles_problem_count = 0;
 static int  s_pmtiles_sel = -1;               // index into s_pmtiles; -1 = folder tiles only
 static bool s_pmtiles_scanned = false;
 static uint64_t s_pmtiles_dir_offsets[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
@@ -36439,6 +36451,7 @@ static void pmTilesDropDirectories() {
 static void resetPmTilesArchiveCache() {
   s_pmtiles_scanned = false;
   s_pmtiles_count = 0;
+  s_pmtiles_problem_count = 0;
   s_pmtiles_sel = -1;
   pmTilesDropDirectories();
 }
@@ -36531,39 +36544,71 @@ static uint8_t* pmTilesGunzip(const uint8_t* input, size_t length, size_t& outpu
   return output;
 }
 
-// Header check for one candidate archive: PNG (or untyped) tiles, uncompressed,
-// gzip directories, and every section inside the file.
-static bool pmTilesProbe(fs::FS* fs, const char* path, PmTiles::Header& header) {
+// Header check for one candidate archive: PMTiles v3, PNG (or untyped) tiles,
+// uncompressed, gzip directories, and every section inside the file (a copy that
+// was cut short fails the last check).
+static PmTilesProbeResult pmTilesProbe(fs::FS* fs, const char* path, PmTiles::Header& header) {
   File file = fs->open(path, FILE_READ);
-  if (!file) return false;
+  if (!file) return kPmProbeMissing;
+  if (file.isDirectory()) {
+    file.close();
+    return kPmProbeMissing;
+  }
   uint8_t raw[PmTiles::kHeaderBytes];
-  const bool header_read = !file.isDirectory() && pmTilesReadRange(file, 0, raw, sizeof(raw));
+  const bool header_read = pmTilesReadRange(file, 0, raw, sizeof(raw));
   const uint64_t size = file.size();
   file.close();
-  const bool supported = header_read && PmTiles::parseHeader(raw, sizeof(raw), header) &&
-      (header.tile_type == PmTiles::kTileTypePng ||
-       header.tile_type == PmTiles::kTileTypeUnknown) &&
-      (header.tile_compression == PmTiles::kCompressionNone ||
-       header.tile_compression == PmTiles::kCompressionUnknown) &&
-      header.internal_compression == PmTiles::kCompressionGzip &&
-      header.root_dir_offset + header.root_dir_bytes >= header.root_dir_offset &&
-      header.root_dir_offset + header.root_dir_bytes <= size &&
-      header.leaf_dirs_offset + header.leaf_dirs_bytes >= header.leaf_dirs_offset &&
-      header.leaf_dirs_offset + header.leaf_dirs_bytes <= size &&
-      header.tile_data_offset + header.tile_data_bytes >= header.tile_data_offset &&
-      header.tile_data_offset + header.tile_data_bytes <= size;
-  if (!supported) Serial.printf("[PMTILES] Unsupported or invalid PNG archive: %s\n", path);
-  return supported;
+  PmTilesProbeResult result = kPmProbeOk;
+  if (!header_read || !PmTiles::parseHeader(raw, sizeof(raw), header))
+    result = kPmProbeNotV3;
+  else if ((header.tile_type != PmTiles::kTileTypePng &&
+            header.tile_type != PmTiles::kTileTypeUnknown) ||
+           (header.tile_compression != PmTiles::kCompressionNone &&
+            header.tile_compression != PmTiles::kCompressionUnknown) ||
+           header.internal_compression != PmTiles::kCompressionGzip)
+    result = kPmProbeNotPng;
+  else if (header.root_dir_offset + header.root_dir_bytes < header.root_dir_offset ||
+           header.root_dir_offset + header.root_dir_bytes > size ||
+           header.leaf_dirs_offset + header.leaf_dirs_bytes < header.leaf_dirs_offset ||
+           header.leaf_dirs_offset + header.leaf_dirs_bytes > size ||
+           header.tile_data_offset + header.tile_data_bytes < header.tile_data_offset ||
+           header.tile_data_offset + header.tile_data_bytes > size)
+    result = kPmProbeTruncated;
+  if (result != kPmProbeOk)
+    Serial.printf("[PMTILES] Rejected %s (reason %u, %lu bytes)\n", path,
+                  (unsigned)result, (unsigned long)size);
+  return result;
+}
+
+// True when <dir> holds some other *.pmtiles (skipping macOS "._" shadows), i.e.
+// the archive is there but not named after its folder. Names only, no opens.
+static bool pmTilesDirHasOtherArchive(fs::FS* fs, const char* dir_path) {
+  File dir = fs->open(dir_path);
+  if (!dir || !dir.isDirectory()) return false;
+  bool found = false;
+  for (int n = 0; n < 64 && !found; ++n) {   // a z/x/y tree's zoom folders come first; stay bounded
+    bool is_dir = false;
+    String path = dir.getNextFileName(&is_dir);
+    if (!path.length()) break;
+    const char* base = strrchr(path.c_str(), '/');
+    base = base ? base + 1 : path.c_str();
+    const size_t len = strlen(base);
+    found = !is_dir && base[0] != '.' && len > 8 && strcasecmp(base + len - 8, ".pmtiles") == 0;
+  }
+  dir.close();
+  return found;
 }
 
 // List /maps/*/<dir>.pmtiles and resolve the saved choice against it. Only the
-// top level of /maps is walked, so a z/x/y tile tree beside the archives costs
-// one directory entry, not a crawl.
+// top level of /maps is walked, by name (getNextFileName opens nothing, and one
+// entry openNextFile can't open would end the walk early).
 static void pmTilesScan() {
   resetPmTilesArchiveCache();
   s_pmtiles_scanned = true;
   if (!s_pmtiles) s_pmtiles = (PmTilesArchive*)psAlloc(sizeof(PmTilesArchive) * kPmTilesMax);
-  if (!s_pmtiles) return;
+  if (!s_pmtiles_problems)
+    s_pmtiles_problems = (PmTilesProblem*)psAlloc(sizeof(PmTilesProblem) * kPmTilesProblemsMax);
+  if (!s_pmtiles || !s_pmtiles_problems) return;
   fs::FS* const fs = mapSdStorage();
   // Both spellings, upper first (see the /MAPS note in loadTileJpeg). Whichever
   // opens first is the directory; walking the other would list it again.
@@ -36571,20 +36616,34 @@ static void pmTilesScan() {
   for (const char* root : kRoots) {
     File dir = fs->open(root);
     if (!dir || !dir.isDirectory()) continue;
-    for (File e = dir.openNextFile(); e && s_pmtiles_count < kPmTilesMax; e = dir.openNextFile()) {
-      const bool is_dir = e.isDirectory();
-      const char* base = strrchr(e.name(), '/');
-      base = base ? base + 1 : e.name();
-      char name[TOUCH_MAP_PMTILES_MAXLEN];
-      const bool fits = strlen(base) < sizeof(name);
-      strlcpy(name, base, sizeof(name));
-      e.close();
-      if (!is_dir || !fits || name[0] == '\0' || name[0] == '.') continue;
+    while (s_pmtiles_count < kPmTilesMax) {
+      bool is_dir = false;
+      String entry = dir.getNextFileName(&is_dir);
+      if (!entry.length()) break;
+      const char* base = strrchr(entry.c_str(), '/');
+      base = base ? base + 1 : entry.c_str();
+      if (!is_dir || base[0] == '\0' || base[0] == '.' ||
+          strlen(base) >= TOUCH_MAP_PMTILES_MAXLEN)
+        continue;
       PmTilesArchive& a = s_pmtiles[s_pmtiles_count];
-      snprintf(a.path, sizeof(a.path), "%s/%s/%s.pmtiles", root, name, name);
-      if (!pmTilesProbe(fs, a.path, a.header)) continue;
-      strlcpy(a.name, name, sizeof(a.name));
-      ++s_pmtiles_count;
+      snprintf(a.path, sizeof(a.path), "%s/%s/%s.pmtiles", root, base, base);
+      PmTilesProbeResult result = pmTilesProbe(fs, a.path, a.header);
+      if (result == kPmProbeOk) {
+        strlcpy(a.name, base, sizeof(a.name));
+        ++s_pmtiles_count;
+        continue;
+      }
+      if (result == kPmProbeMissing) {
+        char sub[sizeof(a.path)];
+        snprintf(sub, sizeof(sub), "%s/%s", root, base);
+        if (!pmTilesDirHasOtherArchive(fs, sub)) continue;   // a plain tile folder
+        result = kPmProbeMisnamed;
+      }
+      if (s_pmtiles_problem_count < kPmTilesProblemsMax) {
+        PmTilesProblem& p = s_pmtiles_problems[s_pmtiles_problem_count++];
+        strlcpy(p.name, base, sizeof(p.name));
+        p.result = result;
+      }
     }
     dir.close();
     break;
@@ -38742,7 +38801,23 @@ static void mapOptPmTilesCb(lv_event_t* e) {
   };
   for (int i = 0; i < s_pmtiles_count; ++i) add_row(s_pmtiles[i].name, i);
   add_row(TR("Folder tiles only"), -1);
-  if (s_pmtiles_count == 0) {
+  for (int i = 0; i < s_pmtiles_problem_count; ++i) {
+    const PmTilesProblem& p = s_pmtiles_problems[i];
+    const char* why =
+        p.result == kPmProbeMisnamed  ? TR("rename the file to the folder name") :
+        p.result == kPmProbeNotPng    ? TR("not a PNG raster archive") :
+        p.result == kPmProbeTruncated ? TR("file incomplete, copy it again") :
+                                        TR("not a PMTiles v3 file");
+    char text[TOUCH_MAP_PMTILES_MAXLEN + 64];
+    snprintf(text, sizeof text, "%s: %s", p.name, why);
+    lv_obj_t* l = lv_label_create(card);
+    lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(l, cardw - 24);
+    lv_label_set_text(l, text);
+    lv_obj_set_style_text_font(l, &g_font_12, LV_PART_MAIN);
+    lv_obj_set_style_text_color(l, lightSurfaceTextColor(0x8A929B), LV_PART_MAIN);
+  }
+  if (s_pmtiles_count == 0 && s_pmtiles_problem_count == 0) {
     lv_obj_t* hint = lv_label_create(card);
     lv_label_set_long_mode(hint, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(hint, cardw - 24);
