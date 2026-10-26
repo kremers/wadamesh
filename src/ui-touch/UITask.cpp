@@ -36440,6 +36440,9 @@ static int  s_pmtiles_sel = -1;               // index into s_pmtiles; -1 = fold
 static bool s_pmtiles_scanned = false;
 static uint64_t s_pmtiles_dir_offsets[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
 static PmTiles::Directory s_pmtiles_dirs[4];
+static bool     s_map_zoom_fit = false;
+static uint32_t s_map_zoom_levels = 0;
+static bool     s_map_zoom_levels_scanned = false;
 
 static void pmTilesDropDirectories() {
   for (int i = 0; i < 4; ++i) {
@@ -36453,6 +36456,7 @@ static void resetPmTilesArchiveCache() {
   s_pmtiles_count = 0;
   s_pmtiles_problem_count = 0;
   s_pmtiles_sel = -1;
+  s_map_zoom_levels_scanned = false;
   pmTilesDropDirectories();
 }
 
@@ -36676,6 +36680,7 @@ static const PmTilesArchive* pmTilesActive() {
 static void pmTilesSelect(int index) {
   if (index < -1 || index >= s_pmtiles_count) return;
   s_pmtiles_sel = index;
+  s_map_zoom_levels_scanned = false;   // the archive's level range came with it
   pmTilesDropDirectories();   // cached directories belong to the previous archive
   touchPrefsSetMapPmTiles(index < 0 ? "-" : s_pmtiles[index].name);
 }
@@ -37117,6 +37122,93 @@ static bool tileExistsAt(uint8_t z, long x, long y) {
 }
 #endif  // ESP32
 
+#if defined(ESP32) && CAP_MICROSD
+// Which zoom levels the SD map holds. With a PMTiles archive selected that is
+// its header range alone: /tiles is also where Wi-Fi downloads land, so its
+// level folders usually span almost every zoom and would void the limit (a
+// z10-19 archive next to a z1-18 download cache must still stop at z10).
+// Folder tiles only: every numeric level folder of the z/x/y trees loadTileJpeg
+// reads (/maps/osm, /tiles). Folder names only, no per-tile probes.
+static void mapSdZoomLevelsScan() {
+  s_map_zoom_levels = 0;
+  s_map_zoom_levels_scanned = true;
+  const uint32_t supported = ((1u << (k_map_zoom_max + 1)) - 1) & ~((1u << k_map_zoom_min) - 1);
+  if (const PmTilesArchive* a = pmTilesActive()) {
+    for (int z = a->header.min_zoom; z <= a->header.max_zoom && z < 32; ++z)
+      s_map_zoom_levels |= 1u << z;
+    s_map_zoom_levels &= supported;
+    Serial.printf("[MAP] Zoom levels of %s: 0x%08lx\n", a->name, (unsigned long)s_map_zoom_levels);
+    return;
+  }
+  fs::FS* const fs = mapSdStorage();
+  for (const char* root : { "/MAPS/osm", "/maps/osm", "/tiles" }) {
+    File dir = fs->open(root);
+    if (!dir || !dir.isDirectory()) continue;
+    for (int n = 0; n < 64; ++n) {   // level folders only; stay bounded on a cluttered root
+      bool is_dir = false;
+      String path = dir.getNextFileName(&is_dir);
+      if (!path.length()) break;
+      if (!is_dir) continue;
+      const char* base = strrchr(path.c_str(), '/');
+      base = base ? base + 1 : path.c_str();
+      char* end = nullptr;
+      const long z = strtol(base, &end, 10);
+      if (end != base && *end == '\0' && z >= 0 && z < 32) s_map_zoom_levels |= 1u << z;
+    }
+    dir.close();
+  }
+  s_map_zoom_levels &= supported;
+  Serial.printf("[MAP] Zoom levels of the tile folders: 0x%08lx\n", (unsigned long)s_map_zoom_levels);
+}
+
+// The levels the SD map holds, or 0 when unknown: the tiles don't come from the
+// card (server, or the online topo style), the card can't be read, or it holds
+// no recognisable levels.
+static uint32_t mapSdZoomLevels() {
+  if (!s_tiles_from_sd || s_tile_fs != mapSdStorage() || s_map_style != 0) return 0;
+  if (mapSdReadBlocked() || !mapSdStorageMounted()) return 0;
+  if (!s_map_zoom_levels_scanned) mapSdZoomLevelsScan();
+  return s_map_zoom_levels;
+}
+// The levels the zoom controls may use, or 0 for no limit (option off too).
+static uint32_t mapZoomFitLevels() { return s_map_zoom_fit ? mapSdZoomLevels() : 0; }
+#else
+static uint32_t mapZoomFitLevels() { return 0; }
+#endif
+
+// Nearest level in `levels` to z; a tie goes to the wider view.
+static uint8_t mapZoomNearestLevel(uint32_t levels, int z) {
+  for (int d = 0; d < 32; ++d) {
+    if (z - d >= 0 && ((levels >> (z - d)) & 1u)) return (uint8_t)(z - d);
+    if (z + d < 32 && ((levels >> (z + d)) & 1u)) return (uint8_t)(z + d);
+  }
+  return (uint8_t)z;
+}
+
+// Keep s_map_zoom on a level the map holds and the slider spanning only those
+// levels. Runs at the top of renderMapTiles, so every path that moves the zoom
+// (buttons, slider, contact jumps, route overview, restore) goes through it.
+static void mapZoomFitApply() {
+  const uint32_t levels = mapZoomFitLevels();
+  int lo = k_map_zoom_min, hi = k_map_zoom_max;
+  bool moved = false;
+  if (levels) {
+    lo = __builtin_ctz(levels);
+    hi = 31 - __builtin_clz(levels);
+    if (!((levels >> s_map_zoom) & 1u)) {
+      s_map_zoom = mapZoomNearestLevel(levels, s_map_zoom);
+      moved = true;
+    }
+  }
+  if (!s_map_zoom_slider) return;
+  if (lv_slider_get_min_value(s_map_zoom_slider) != lo ||
+      lv_slider_get_max_value(s_map_zoom_slider) != hi) {
+    lv_slider_set_range(s_map_zoom_slider, lo, hi);
+    moved = true;
+  }
+  if (moved) lv_slider_set_value(s_map_zoom_slider, s_map_zoom, LV_ANIM_OFF);
+}
+
 // Probe the pack for the highest zoom level that has a tile near `lat,lon`.
 // Used as an auto-fallback so a missing top zoom (e.g. the operator packed
 // z12+z13 but s_map_zoom defaults to z14) doesn't make the whole tab look
@@ -37142,6 +37234,7 @@ static uint8_t bestAvailableZoom(double lat, double lon) {
 // runs on tab activation or pan/zoom (not on every refresh tick).
 static void renderMapTiles() {
   if (!s_map_canvas) return;
+  mapZoomFitApply();
 
   // Fall back to placeholder when no usable GPS center.
   if (s_map_center_lat == 0.0 && s_map_center_lon == 0.0) {
@@ -38662,6 +38755,7 @@ static void mapOptZoomButtonsCb(lv_event_t* e) {
 // Map tile source toggle (in the map options popup): ON = tiles live on the microSD
 // card — read the user's SD library AND cache Wi-Fi-fetched gaps there (#20), so the
 // library grows and downloads survive; OFF = tile server + internal LittleFS cache.
+static void openMapOptions();   // fwd — the SD toggle rebuilds the popup
 static void mapOptTilesSdCb(lv_event_t* e) {
   if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
   // Pause at a request boundary before repointing the cache. A queued backlog is
@@ -38705,6 +38799,7 @@ static void mapOptTilesSdCb(lv_event_t* e) {
   freeMapTiles();                // drop stale tile widgets → reload from the new source
   renderMapTiles();
   tileBackendSwapFinish();       // queued requests resume against the selected backend
+  openMapOptions();              // rebuild: "Zoom: map levels only" only shows with SD tiles
   if (g_lv.task) {
     if (on && !s_tiles_from_sd) g_lv.task->showAlert(TR("SD card unavailable"), 1600);
     else g_lv.task->showAlert(on ? TR("Map tiles: microSD") : TR("Map tiles: server"), 1400);
@@ -38732,8 +38827,22 @@ static void mapPmTilesPickCb(lv_event_t* e) {
   closeMapOptions();
   if (index >= s_pmtiles_count) return;   // card changed under the open picker
   pmTilesSelect(index);
+  // Land inside the new archive's zoom range (nearest end), even with "Zoom: map
+  // levels only" off: a z10-19 archive picked at z8 would otherwise open blank.
+  if (index >= 0 && s_tiles_from_sd && s_map_style == 0) {
+    const PmTiles::Header& h = s_pmtiles[index].header;
+    const uint8_t lo = h.min_zoom > k_map_zoom_min ? h.min_zoom : k_map_zoom_min;
+    const uint8_t hi = h.max_zoom < k_map_zoom_max ? h.max_zoom : k_map_zoom_max;
+    if (lo <= hi && (s_map_zoom < lo || s_map_zoom > hi)) {
+      s_map_zoom = s_map_zoom < lo ? lo : hi;
+      touchPrefsSetMapZoom(s_map_zoom);
+      if (s_map_zoom_slider) lv_slider_set_value(s_map_zoom_slider, s_map_zoom, LV_ANIM_OFF);
+    }
+  }
   freeMapTiles();        // drop tiles decoded from the previous archive
   renderMapTiles();
+  renderMapMarkers();
+  refreshMapInfoLabel();
   if (g_lv.task) {
     char m[64];
     snprintf(m, sizeof m, "%s: %s", TR("Map file"),
@@ -38826,6 +38935,19 @@ static void mapOptPmTilesCb(lv_event_t* e) {
     lv_obj_set_style_text_color(hint, lightSurfaceTextColor(0x8A929B), LV_PART_MAIN);
   }
   addCloseXBadge(card, mapOptionsDismissCb);
+}
+
+static void mapOptZoomFitCb(lv_event_t* e) {
+  if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
+  s_map_zoom_fit = lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED);
+  const uint8_t v = s_map_zoom_fit ? 1 : 0;
+  touchPrefsSetBlob("map_zfit", &v, 1);
+  s_map_zoom_levels_scanned = false;   // pick up packs copied since the last scan
+  renderMapTiles();                    // clamps the zoom + slider range
+  renderMapMarkers();
+  refreshMapInfoLabel();
+  if (s_map_zoom_fit && !mapZoomFitLevels() && g_lv.task)
+    g_lv.task->showAlert(TR("No map levels found on the SD card"), 1600);
 }
 #endif
 
@@ -39060,6 +39182,29 @@ static void openMapOptions() {
     lv_obj_set_style_text_color(l, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
     lv_obj_align(l, LV_ALIGN_LEFT_MID, 8, 0);
     y += 44;
+  }
+  // Row: limit zoom to the levels in the SD map (PMTiles range / z folders).
+  // Only meaningful for SD tiles, so only shown with them.
+  if (s_tiles_from_sd) {
+    // The detected range rides along, so a surprising one (an archive whose
+    // header starts at z1, or folder tiles instead of the archive) is visible.
+    char zcap[64];
+    const uint32_t levels = mapSdZoomLevels();
+    if (levels)
+      snprintf(zcap, sizeof zcap, "%s (z%d-%d)", TR("Zoom: map levels only"),
+               __builtin_ctz(levels), 31 - __builtin_clz(levels));
+    else
+      strlcpy(zcap, TR("Zoom: map levels only"), sizeof zcap);
+    lv_obj_t* zl = lv_label_create(card);
+    lv_label_set_text(zl, zcap);
+    lv_obj_set_style_text_color(zl, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
+    lv_obj_set_style_text_font(zl, &g_font_14, LV_PART_MAIN);
+    lv_obj_set_pos(zl, 2, y + 4);
+    lv_obj_t* sw_fit = lv_switch_create(card);
+    lv_obj_align(sw_fit, LV_ALIGN_TOP_RIGHT, 0, y);
+    if (s_map_zoom_fit) lv_obj_add_state(sw_fit, LV_STATE_CHECKED);
+    lv_obj_add_event_cb(sw_fit, mapOptZoomFitCb, LV_EVENT_VALUE_CHANGED, nullptr);
+    y += 40;
   }
 #endif
 
@@ -39918,7 +40063,12 @@ static void mapZoomStep(bool zoom_in) {
   if (!zoom_in && s_map_zoom <= k_map_zoom_min) return;
 #if defined(ESP32)
   uint8_t want = 0;
-  if (zoom_in) {
+  if (const uint32_t levels = mapZoomFitLevels()) {
+    // Only the map's own levels: no tile probes, no Wi-Fi fill-in.
+    for (int z = (int)s_map_zoom + (zoom_in ? 1 : -1);
+         z >= (int)k_map_zoom_min && z <= (int)k_map_zoom_max; z += zoom_in ? 1 : -1)
+      if ((levels >> z) & 1u) { want = (uint8_t)z; break; }
+  } else if (zoom_in) {
     for (uint8_t z = s_map_zoom + 1; z <= k_map_zoom_max; ++z) {
       if (mapZoomReachable(z)) { want = z; break; }
     }
@@ -39967,7 +40117,8 @@ static bool navMapZoomIfActive(bool zoom_in) {
 // readout, and releasing applies + persists the chosen level.
 static void mapZoomSliderCb(lv_event_t* e) {
   if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
-  const int z = (int)lv_slider_get_value(lv_event_get_target(e));
+  int z = (int)lv_slider_get_value(lv_event_get_target(e));
+  if (const uint32_t levels = mapZoomFitLevels()) z = mapZoomNearestLevel(levels, z);   // where release will land
   if (s_map_zoom_val) lv_label_set_text_fmt(s_map_zoom_val, TR("zoom %d"), z);   // live target level while dragging
 }
 static void mapZoomSliderReleaseCb(lv_event_t* e) {
@@ -39975,6 +40126,10 @@ static void mapZoomSliderReleaseCb(lv_event_t* e) {
   int z = (int)lv_slider_get_value(lv_event_get_target(e));
   if (z < (int)k_map_zoom_min) z = k_map_zoom_min;
   if (z > (int)k_map_zoom_max) z = k_map_zoom_max;
+  if (const uint32_t levels = mapZoomFitLevels()) {
+    z = mapZoomNearestLevel(levels, z);   // snap off a level the map doesn't have
+    lv_slider_set_value(lv_event_get_target(e), z, LV_ANIM_OFF);
+  }
   if ((uint8_t)z == s_map_zoom) return;
   s_map_zoom = (uint8_t)z;
 #if defined(ESP32)
@@ -40091,6 +40246,9 @@ static void onMapTabActivated() {
   // that showed "downloading" once would never re-attempt on re-open.
   memset(s_tile_fetch_dedup, 0, sizeof(s_tile_fetch_dedup));
   s_tile_fetch_dedup_head = 0;
+#endif
+#if defined(ESP32) && CAP_MICROSD
+  s_map_zoom_levels_scanned = false;   // level folders may have been added (Transfer app, downloads)
 #endif
   // Nine tile reads + JPEG decodes block this callback for ~2.5 s on the first
   // open after boot (measured: [STALL] ui:lvgl 2597ms, M9_PORT.md). Show the
@@ -74329,6 +74487,9 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
   s_map_tile_debug    = touchPrefsGetMapTileDebug();      // developer: tile-pipeline diagnostic overlay
   s_map_show_contacts = touchPrefsGetMapShowContacts();
   { uint8_t v = 0; s_map_fav_only = touchPrefsGetBlob("map_fav", &v, 1) == 1 && v; }   // map options: Favorites only
+#if CAP_MICROSD
+  { uint8_t v = 0; s_map_zoom_fit = touchPrefsGetBlob("map_zfit", &v, 1) == 1 && v; }  // map options: map zoom levels only
+#endif
   s_map_show_links    = touchPrefsGetMapShowLinks();      // dotted self->contact link lines (PR #61)
   s_map_style         = touchPrefsGetMapStyle();          // 0=OpenStreetMap (default), 1=OpenTopoMap
   { const uint8_t pz = touchPrefsGetMapZoom();    // restore the last user-set map zoom

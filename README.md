@@ -69,6 +69,12 @@ read-only; tiles missing from the selected archive still load from the
 fallback, and **Folder tiles only** turns archives off. JPEG and vector
 PMTiles archives are not supported.
 
+Picking an archive moves the zoom into its range if it is outside. With
+**Tiles from SD card** on, **Map options → Zoom: map levels only** limits the
+zoom slider and +/- buttons to the levels the map actually holds: the selected
+archive's zoom range, or with **Folder tiles only** every `z` folder of the
+`maps/osm/z/x/y` and `tiles/z/x/y` trees.
+
 To create a compatible pack with [QGIS](https://qgis.org/):
 
 1. Add a map source whose licence and service terms explicitly permit offline
