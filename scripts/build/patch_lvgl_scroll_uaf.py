@@ -20,9 +20,13 @@
 # EXCVADDR 0x80c08040. Without a press, the same pointer reaches
 # _lv_indev_scroll_throw_handler (the beta_18 coredump at popupClose()).
 #
-# The patch resets the device for scroll_obj as well. lv_indev_reset() sets
-# reset_query, which every indev path checks after its events and which clears
-# scroll_obj before the next read. LVGL 9 resets for scroll_obj the same way.
+# The patch resets the device for scroll_obj as well, as LVGL 9 does.
+# lv_indev_reset() sets reset_query; the next read clears scroll_obj before it
+# processes the point, and the press and release paths stop after any event
+# that set it. _lv_indev_scroll_throw_handler() does not stop: it keeps using
+# scroll_obj after lv_obj_scroll_by() has sent LV_EVENT_SCROLL. So a SCROLL or
+# SCROLL_END handler must never delete the scrolled object synchronously - close
+# through popupClose() (lv_obj_del_async), as every handler does today.
 #
 # Idempotent and fail-closed, like patch_lvgl_anim_uaf.py. On a fresh checkout
 # pre-scripts run before PlatformIO fetches lib_deps, so the pre-link action
