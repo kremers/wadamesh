@@ -139,7 +139,9 @@ int main() {
                     + sizeof(Config::ble_kbd_name)
                     + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v53 is the current layout minus every byte appended since");
 
   Config v53 = safeDefaults();
@@ -227,7 +229,9 @@ int main() {
                     + sizeof(Config::ble_kbd_name)
                     + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v55 is the current layout minus every byte appended since");
   Config v55 = safeDefaults();
   v55.ver = 55;
@@ -256,7 +260,9 @@ int main() {
                     + sizeof(Config::ble_kbd_name)
                     + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v57 is the current layout minus the Attaky notification fields");
   Config v57 = safeDefaults();
   v57.ver = 57;
@@ -282,7 +288,9 @@ int main() {
                     + sizeof(Config::ble_kbd_name)
                     + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v59 is the current layout minus the Home-key drawer option");
   Config v59 = safeDefaults();
   v59.ver = 59;
@@ -303,7 +311,9 @@ int main() {
                     + sizeof(Config::ble_kbd_name)
                     + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v60 is the current layout minus the Bluetooth keyboard settings");
   Config v60 = safeDefaults();
   v60.ver = 60;
@@ -326,7 +336,9 @@ int main() {
   constexpr size_t v61_size = offsetof(Config, ble_kbd_back);
   static_assert(v61_size + sizeof(Config::ble_kbd_back)
                     + sizeof(Config::report_ping) + sizeof(Config::report_done_n)
-                    + sizeof(Config::condense_nav) == sizeof(Config),
+                    + sizeof(Config::condense_nav)
+                    + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
                 "v61 is the current layout minus the Back key");
   Config v61 = safeDefaults();
   v61.ver = 61;
@@ -345,6 +357,42 @@ int main() {
   assert(migrated.ble_kbd_addr_type == 1);
   assert(strcmp(migrated.ble_kbd_name, "Sologic - Keyboard") == 0);
   assert(migrated.ble_kbd_back == 0);
+
+  // v72 appends the old-contact purge. A v71 blob keeps everything it stored;
+  // the purge stays off at its default days instead of whatever bytes followed.
+  constexpr size_t v71_size = offsetof(Config, ct_purge_on);
+  static_assert(v71_size + sizeof(Config::ct_purge_on) + sizeof(Config::ct_purge_days)
+                    + sizeof(Config::chats_unread_only) == sizeof(Config),
+                "v71 is the current layout minus the contact purge");
+  Config v71 = safeDefaults();
+  v71.ver = 71;
+  v71.condense_nav = 1;
+  v71.ct_purge_on = 1;              // outside the stored v71 extent
+  v71.ct_purge_days = 7;
+  migrated = safeDefaults();
+  migrated.ct_purge_days = 30;
+  assert(TouchPrefsSchema::overlayStored(migrated, &v71, v71_size, &stored_version));
+  assert(stored_version == 71);
+  assert(migrated.condense_nav == 1);
+  assert(migrated.ct_purge_on == 0);
+  assert(migrated.ct_purge_days == 30);
+
+  // v73 appends the Chats unread-only filter (#824). A v72 blob keeps its purge
+  // settings; the filter starts off instead of inheriting a stray byte.
+  constexpr size_t v72_size = offsetof(Config, chats_unread_only);
+  static_assert(v72_size + sizeof(Config::chats_unread_only) == sizeof(Config),
+                "v72 is the current layout minus the Chats unread-only filter");
+  Config v72 = safeDefaults();
+  v72.ver = 72;
+  v72.ct_purge_on = 1;
+  v72.ct_purge_days = 7;
+  v72.chats_unread_only = 1;        // outside the stored v72 extent
+  migrated = safeDefaults();
+  assert(TouchPrefsSchema::overlayStored(migrated, &v72, v72_size, &stored_version));
+  assert(stored_version == 72);
+  assert(migrated.ct_purge_on == 1);
+  assert(migrated.ct_purge_days == 7);
+  assert(migrated.chats_unread_only == 0);
 
   Config invalid = safeDefaults();
   uint8_t garbage[sizeof(Config)] = {};

@@ -25,7 +25,34 @@
 // =============================================================================
 
 // ---- Per-board structural capabilities (factored out of the device names) ----
-#if defined(WADA_WEB)                    // ===== Browser / desktop host build (web/, WEB_BUILD.md) =====
+#if defined(WADA_WEB) && defined(WADA_SIM_PAGER)   // ===== T-LoRa Pager simulator (web/, -DWADA_SIM_PAGER=ON) =====
+  // The host build laid out as the Pager, for reviewing and scripting its screens off
+  // the device: the Pager's own capability set (below), with the radio, card and
+  // storage of the web board behind it (web/sim_pager/).
+  #define CAP_TOUCH        0   // keyboard + rotary encoder only, as on the device
+  #define CAP_ROTATABLE    0
+  #define CAP_LARGE_SCREEN 0   // native 480x222
+  #define CAP_SD           0   // no card in the simulator
+  #define CAP_FILESYSTEM   0
+  #define CAP_GPS          1
+  #define CAP_GPS_RECEIVER 0
+  #define CAP_OTA          0
+  #define CAP_LOCK_SCREEN  1
+  #define CAP_USB_FILES    0
+  #define CAP_RADIO_TOOLS  0
+  #define CAP_SCREEN_MIRROR 0
+  #define CAP_WEB_BROWSER  0
+  #define CAP_WIFI_SETUP   0
+  #define CAP_BT_SETUP     0
+  #define CAP_USB_FLASH    0
+  #define CAP_FILE_HANDOFF 1
+  #define CAP_NATIVE_KEYBOARD 0
+  #define CAP_BUILTIN_LANGS    1
+  #define CAP_BUILTIN_LUA_APPS 1
+  #define CAP_STORE_DOWNLOADS  1
+  #define CAP_FW_UPDATE_CHECK  0
+
+#elif defined(WADA_WEB)                  // ===== Browser / desktop host build (web/, WEB_BUILD.md) =====
   // A virtual touch panel whose size the page picks at boot (WEB_BUILD.md "Phones and
   // tablets"): 800x480 landscape on a computer, the large-screen layouts the CrowPanel 5.0
   // and the Tanmatsu ship; on a phone or tablet the size of its screen below the page's
@@ -86,10 +113,11 @@
   #define CAP_TOUCH        1
   #define CAP_ROTATABLE    0
   #define CAP_LARGE_SCREEN 1   // 480x480
-  #define CAP_SD           0
+  #define CAP_SD           0   // the microSD slot is wired to the RP2040 co-processor, not the S3
   #define CAP_FILESYSTEM   1
   #define CAP_GPS          0
   #define CAP_OTA          0   // one factory app slot, no in-place update
+  #define CAP_TILE_STORAGE 0   // no tiles partition and no card the map can use (#692)
   #define CAP_LOCK_SCREEN  0
   #define CAP_BATTERY      0   // no battery fitted
 
@@ -173,14 +201,10 @@
   // HELTEC_LORA_V4_TFT to reuse all its UI code); the deltas are 8 MB octal
   // PSRAM (→ web browser) and a micro-SD slot on the Expansion Kit V2.
   #define CAP_TOUCH        1   // CHSC6x capacitive touch (Expansion Kit V2)
-  // Rotation is OFF until a tester verifies the R8-specific landscape touch
-  // maps (HeltecV4CapTouch.cpp, TESTER-VERIFY): the boot guard at UITask.cpp
-  // ("V4-R8: force PORTRAIT at every boot") reverts any landscape pref anyway,
-  // so with 1 the Orientation control was a reboot trap that always landed
-  // back on Portrait (plus one garbled session, since the boot wordmark had
-  // already rotated the panel). Flip back to 1 together with removing that
-  // guard once landscape touch is confirmed on hardware.
-  #define CAP_ROTATABLE    0
+  // Landscape asks "Keep this orientation?" on its first boot and goes back to
+  // portrait without a tap: the R8 landscape touch map (HeltecV4CapTouch.cpp)
+  // is not confirmed on every unit yet (r8RotationAskTick in UITask.cpp).
+  #define CAP_ROTATABLE    1
   #define CAP_LARGE_SCREEN 0   // 240x320
   #define CAP_SD           1   // micro-SD on Expansion Kit V2 (shared TFT SPI bus, CS=3)
   #define CAP_FILESYSTEM   1   // browsable filesystem (the SD card)
@@ -253,6 +277,12 @@
   #define CAP_LOCK_SCREEN  0
 #endif
 
+// Somewhere to keep map tiles: a tiles partition, or a card the map can fall back to.
+// 0 = the map says this board has none, instead of "reflash the tiles partition".
+#ifndef CAP_TILE_STORAGE
+  #define CAP_TILE_STORAGE 1
+#endif
+
 // Boards without a battery ADC must not advertise battery history/calibration.
 #ifndef CAP_BATTERY
   #define CAP_BATTERY 1
@@ -268,6 +298,24 @@
   #define CAP_MICROSD 0
 #endif
 
+// Offline maps from PMTiles PNG archives on the card (Map options -> Map file) and
+// the "Zoom: map levels only" limit. ~11 KB of reader + UI, on every board with a card.
+#ifndef CAP_MAP_PMTILES
+  #if CAP_MICROSD
+    #define CAP_MAP_PMTILES 1
+  #else
+    #define CAP_MAP_PMTILES 0
+  #endif
+#endif
+
+// Map overzoom: a tile no offline source holds, while no download can bring it (Wi-Fi
+// down), is drawn from its nearest ancestor up to 3 levels up, cut out and scaled 2x to
+// 8x, instead of leaving a hole. It decodes into the slot's own pool buffer and needs one
+// transient crop copy of at most 32 KB, so the 2 MB V4 can afford it like every board.
+#ifndef CAP_MAP_OVERZOOM
+  #define CAP_MAP_OVERZOOM 1
+#endif
+
 // No dedicated "tiles" LittleFS partition in the board's own partition table, and no free flash to
 // add one without moving partitions that hold user data (16 MB maps: 2 x 4 MB OTA + 8000 KB storage
 // + coredump fill the chip). The Wi-Fi map tile cache then goes to the microSD when one is mounted,
@@ -277,6 +325,19 @@
   #define CAP_TILES_ON_STORAGE 1
 #else
   #define CAP_TILES_ON_STORAGE 0
+#endif
+
+// The optional emoji pack and its tab/recent picker need both removable SD and
+// 8 MB PSRAM. Every enabled SD target below has an 8 MB PSRAM board definition;
+// the regular Heltec V4 has only 2 MB and no SD, so both conditions exclude it.
+// Not the T-LoRa Pager: its app slot is full (beta_103 overflowed by 2 KB with
+// the pack in; leaving it out frees about 7 KB).
+#if CAP_SD && defined(BOARD_HAS_PSRAM) && \
+    (defined(HAS_CROWPANEL_35) || defined(HAS_TDECK_PRO) || defined(HAS_TDECK_GT911) || \
+     defined(HAS_THINKNODE_M9) || defined(HELTEC_LORA_V4_R8))
+  #define CAP_EMOJI_PACK 1
+#else
+  #define CAP_EMOJI_PACK 0
 #endif
 
 // Persisted, restart-to-apply UI-size selector. Large-screen boards already
@@ -339,7 +400,9 @@
 // Touchscreen-only boards that take a Bluetooth, CardKB or clip-on keyboard join
 // too: the group stays empty (and invisible) until a keyboard connects.
 #if defined(HAS_TANMATSU) || defined(HAS_TDECK_TRACKBALL) || defined(HAS_TDECK_PRO) || defined(TLORA_PAGER) || defined(HAS_THINKNODE_M9) || defined(ATTAKY_MESH_SERIES) || \
-    (CAP_EXT_KEYBOARD && !CAP_KEYBOARD)
+    (CAP_EXT_KEYBOARD && !CAP_KEYBOARD) || (defined(WADA_WEB) && defined(HAS_M9_KEYBOARD))
+  // (The last term is the M9 flavour of the host build, web/CMakeLists.txt WADA_HOST_BOARD=m9:
+  // the ThinkNode M9's key path on the web board, for scripted navigation tests.)
   #define CAP_KEYPAD_NAV 1
 #else
   #define CAP_KEYPAD_NAV 0
@@ -389,10 +452,21 @@
   #define CAP_ROUND_CORNERS 0
 #endif
 
+// An e-paper panel (the T-Deck Pro and Max, both HAS_TDECK_PRO). LVGL draws into a
+// band that the driver copies, with the CPU, into its own PSRAM canvas, and every change
+// on screen costs a panel update that blocks the loop for about 0.65 s (a full one for
+// longer). So: the band needs no DMA-capable RAM, and anything that repaints often
+// (progress, activity lights) has to be paced or left out.
+#if defined(HAS_TDECK_PRO)
+  #define CAP_EPAPER 1
+#else
+  #define CAP_EPAPER 0
+#endif
+
 // The Constellation screensaver (Constellation.cpp) animates continuously. E-paper
 // cannot show that, and refreshing it to try would wear the panel, so the T-Deck
 // Pro and Max (both HAS_TDECK_PRO) go without. Every other display gets it.
-#if defined(HAS_TDECK_PRO)
+#if CAP_EPAPER
   #define CAP_SCREENSAVER 0
 #else
   #define CAP_SCREENSAVER 1
@@ -407,6 +481,17 @@
   #define CAP_GPS_BAUD_AUTO 1
 #else
   #define CAP_GPS_BAUD_AUTO 0
+#endif
+
+// The same probe, but only while the user has not picked a speed (Settings > GPS >
+// Serial speed > Auto, the default): the T-Deck Plus GPS talks 38400 or 9600
+// depending on the unit, newer ThinkNode M9s 115200. The speed it locks on is kept
+// apart from the user's choice (touchPrefsSetGpsBaudFound), and a picked speed is
+// used as it is, never probed past.
+#if (defined(HAS_TDECK_GT911) && !defined(HAS_TDECK_PRO)) || defined(HAS_THINKNODE_M9)
+  #define CAP_GPS_BAUD_FIND 1
+#else
+  #define CAP_GPS_BAUD_FIND 0
 #endif
 
 // A switchable LoRa antenna: an on-board antenna plus an external socket, picked at
@@ -474,10 +559,19 @@
 // hardware gate as CAP_COMPASS: the ThinkNode M9's QMI8658 is the only one
 // driven so far (variants/thinknode_m9/M9Imu.*). Its point is tilt — a 2-axis
 // magnetic heading is wrong by ~1.5 degrees per degree of tilt at mid latitudes.
-#if defined(HAS_M9_IMU)
+#if defined(HAS_M9_IMU) || defined(TLORA_PAGER)   // + the Pager's BHI260AP (variants/lilygo_tlora_pager/PagerImu.*)
   #define CAP_IMU 1
 #else
   #define CAP_IMU 0
+#endif
+
+// The constellation screensaver's optional note left of the battery
+// (CstStatus::batt_note). Only the Pager fills it, from its fuel gauge, so only
+// the Pager carries the label (the Tanmatsu has no flash to spare for an empty one).
+#if defined(TLORA_PAGER)
+  #define CAP_CST_BATT_NOTE 1
+#else
+  #define CAP_CST_BATT_NOTE 0
 #endif
 
 #if defined(HAS_CC_BRIGHTNESS)
@@ -553,6 +647,22 @@
     #define CAP_WEB_BROWSER 0   // 2 MB V4: TLS handshake can't fit
   #else
     #define CAP_WEB_BROWSER 1   // 8 MB boards incl. the V4-R8
+  #endif
+#endif
+
+// ---- Lua apps over HTTPS (wada.net.request with an https:// url) -------------
+// Same heap limit as the Reader: the handshake needs ~30 KB of internal heap, so
+// it follows CAP_WEB_BROWSER. Unlike the Reader the chain IS verified (ISRG roots,
+// UITask.cpp kLuaTlsRoots), because an app sends a password or a bearer token.
+// Off on the P4 boards: TLS runs on the C6 there and setCACert is a no-op, so the
+// chain is not checked before a password goes out. Off on the 2 MB Heltec V4: it
+// cannot fit the handshake (the V4-R8, 8 MB, keeps it).
+#ifndef CAP_LUA_HTTPS
+  #if defined(HAS_TDISPLAY_P4) || defined(HAS_CROWPANEL_P4_101) || \
+      (defined(HELTEC_LORA_V4_TFT) && !defined(HELTEC_LORA_V4_R8))
+    #define CAP_LUA_HTTPS 0
+  #else
+    #define CAP_LUA_HTTPS CAP_WEB_BROWSER
   #endif
 #endif
 
@@ -651,12 +761,14 @@
 // USB cable (Web Serial) while the USB Files app is open (UsbFilesSession.h).
 // Every ESP32-S3 board whose USB socket is the chip's own USB (ARDUINO_USB_CDC_ON_BOOT):
 // UsbFilesSession handles both of its serial drivers (HW-CDC and TinyUSB CDC), proven on
-// the T-Deck and the Heltec V4. Not yet: boards behind a USB-serial bridge chip (M9,
-// CrowPanel 3.5/5.0, Attaky, SenseCAP Indicator: 115200 baud and a UART receive buffer
-// that is fixed once running), the ESP32-P4 builds (IDF), and the T-Deck Pro family incl.
-// the Max (left out from the start; e-paper refresh during a transfer is untested).
+// the T-Deck and the Heltec V4. The T-Deck Pro and Max run the T-Deck's HW-CDC; on their
+// e-paper the screen repaints paced (UsbFilesPaint.h) and the SD activity light stays
+// off, so a transfer does not keep the panel refreshing and the loop blocked. Not yet:
+// boards behind a USB-serial bridge chip (M9, CrowPanel 3.5/5.0, Attaky, SenseCAP
+// Indicator: 115200 baud and a UART receive buffer that is fixed once running) and the
+// ESP32-P4 builds (IDF).
 #ifndef CAP_USB_FILES
-  #if defined(ESP32) && ARDUINO_USB_CDC_ON_BOOT && !defined(HAS_TDECK_PRO) && \
+  #if defined(ESP32) && ARDUINO_USB_CDC_ON_BOOT && \
       !defined(HAS_TDISPLAY_P4) && !defined(HAS_CROWPANEL_P4_101) && !defined(HAS_TANMATSU)
     #define CAP_USB_FILES 1
   #else
@@ -740,4 +852,38 @@
 #endif
 #ifndef CAP_FW_UPDATE_CHECK
   #define CAP_FW_UPDATE_CHECK 1
+#endif
+
+// Settings > Contact Management: delete contacts not heard from in N days (#719).
+// On every board; the Tanmatsu got room for it back when its image shrank by
+// ~195 KB (silent asserts, deflated emoji), see sdkconfigs/wadamesh_tanmatsu.
+#ifndef CAP_CONTACT_PURGE
+  #define CAP_CONTACT_PURGE 1
+#endif
+
+// The two-line date of the lock screen and the Constellation screensaver (#742):
+// a portrait or narrow panel at Large / Huge text wraps the day name over the rest.
+// Off on the Tanmatsu, whose fixed 800 x 480 landscape panel always fits the date
+// on one line, so the check is only image size its AppFS ceiling has no room for.
+#ifndef CAP_DATE_WRAP
+  #if defined(HAS_TANMATSU)
+    #define CAP_DATE_WRAP 0
+  #else
+    #define CAP_DATE_WRAP 1
+  #endif
+#endif
+
+// Settings > Display > Screensaver > "Keep north up" (#706): the Constellation stops
+// its slow turn, so north stays at the top.
+#ifndef CAP_SSAVER_NORTH_LOCK
+  #if CAP_SCREENSAVER
+    #define CAP_SSAVER_NORTH_LOCK 1
+  #else
+    #define CAP_SSAVER_NORTH_LOCK 0
+  #endif
+#endif
+
+// Backups listed by their date, or "Default", instead of the file name (#739).
+#ifndef CAP_BACKUP_DATE_LABELS
+  #define CAP_BACKUP_DATE_LABELS 1
 #endif

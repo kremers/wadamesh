@@ -49,7 +49,7 @@ under a running operation.
 
 | Key | Press | Hold |
 |---|---|---|
-| **MSG** | Jump to the Chats tab; inside a conversation, return to the chat list (closes an open app first) | None |
+| **MSG** | Jump to the Chats tab; inside a conversation, return to the chat list (closes an open app first); on the chat list, open **Contacts** | None |
 | **HOME** | Peel one layer off an open app; on the Home tab, toggle the app drawer; otherwise jump Home (and clear the Back trail). **Double-press** to open the launcher settings (what Home opens, icon size) | None |
 | **@ (Mentions)** | Open the Mentions screen | None |
 | **ADV** | Open the Send Advert page | **Toggle GPS on/off** |
@@ -93,6 +93,14 @@ of view, the highlight moves to a link coming into view. Only at the top or
 bottom of the page does focus leave for the address bar or the toolbar.
 **OK** opens the highlighted link.
 
+## Sliders and − / + rows
+
+On a slider (brightness, screen timeout) Left and Right change the value. On a
+settings row with **−** and **+** buttons (Volume, Do Not Disturb From and
+Until, the custom UTC offset, battery capacity), Left presses − and Right
+presses +, wherever the highlight sits on that row. Up and Down leave the row
+in both cases.
+
 ## Typing & editing
 
 Inside a text field the left/right arrows move the caret, and when the caret
@@ -112,6 +120,15 @@ walks back to the input. Press **OK** on either button to open its picker.
 
 In the symbol grid, use all four arrows to move the highlight and **OK** to
 insert the selected character.
+
+## Long pages
+
+Text and charts are not stops for the highlight. When the next control in the
+direction you press is further away than the screen shows (a long description,
+the telemetry chart), **Up** and **Down** first scroll the page a step at a
+time, and the highlight moves on once the control is in reach, so nothing
+between two buttons is skipped. With no control left in that direction, the
+press scrolls the page.
 
 The Create/Join channel forms use the same **#** action beside every text
 field. Right moves from the field to **#**; Left returns to editing the field.

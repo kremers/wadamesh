@@ -2,6 +2,7 @@
 #if defined(HAS_M9_KEYBOARD) && defined(ESP32)
 
 #include "M9Keyboard.h"
+#include "M9KeyGuard.h"
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -32,6 +33,9 @@ static bool             s_found_cb_done = false;
 static TwoWire*         s_bus = nullptr;      // set once the controller answers
 static uint8_t          s_address = PIN_KB_ADDR;
 static uint32_t         s_last_probe_ms = 0;
+static uint8_t          s_last_bl_duty = 0;
+static uint8_t          s_bus_errors = 0;
+static M9KeyGuard       s_guard;
 
 static bool kbReadReg(TwoWire& w, uint8_t address, uint8_t reg, uint8_t* out) {
   w.beginTransmission(address);
@@ -72,6 +76,12 @@ void m9KeyboardSetFoundCallback(void (*cb)(uint8_t addr)) { s_found_cb = cb; s_f
 
 void m9KeyboardBegin() {
   Wire1.begin(PIN_KB_SDA, PIN_KB_SCL);
+  Wire1.setClock(100000);
+  Wire1.setTimeOut(20);
+#if defined(PIN_KEY_LED)
+  pinMode(PIN_KEY_LED, OUTPUT);
+  digitalWrite(PIN_KEY_LED, LOW);
+#endif
   // The controller is its own MCU (ESP32-S2) on the ALWAYS-ON 3V3 rail via R3
   // (schematic-verified, see the keyboard-bus note in platformio.ini — an
   // earlier revision of this comment said "switched peripheral rail", which
@@ -108,20 +118,21 @@ void m9KeyboardPoll() {
   // has not cleared it yet: the old three-read drain entered keys twice (#625).
   // The Launcher and Meshtastic M9 ports also take one read per key.
   uint8_t key = 0;
-  if (!kbReadReg(*s_bus, s_address, M9_KB_REG_KEY, &key)) return;
+  if (!kbReadReg(*s_bus, s_address, M9_KB_REG_KEY, &key)) {
+    if (++s_bus_errors >= 8) {
+      s_bus = nullptr;
+      s_bus_errors = 0;
+    }
+    return;
+  }
+  if (s_bus_errors > 0) {
+    s_bus_errors = 0;
+    if (s_last_bl_duty > 0) (void)m9KeyboardSetBacklight(s_last_bl_duty);
+  }
   if (key == 0x00 || key == 0xFF) return;   // no key / undefined-register reply
-  // A key the controller reports again within kRepeatGuardMs is the same press:
-  // a stale latch read on the next poll, or the matrix bouncing on a slow,
-  // deliberate press (#625: "worse when typing slowly"). Nobody presses one key
-  // twice that fast on purpose. Timed from the last ACCEPTED key, so a run of
-  // bounces cannot stretch the guard.
-  static constexpr uint32_t kRepeatGuardMs = 70;
-  static uint8_t  s_last_key = 0;
-  static uint32_t s_last_key_ms = 0;
-  const uint32_t key_ms = millis();
-  if (key == s_last_key && (uint32_t)(key_ms - s_last_key_ms) < kRepeatGuardMs) return;
-  s_last_key = key;
-  s_last_key_ms = key_ms;
+  // The same key again soon after is the same press: a stale latch read, or the
+  // matrix chattering as a slow key comes up (#625, #671). See M9KeyGuard.h.
+  if (!m9KeyGuardAccept(s_guard, key, millis())) return;
   const uint8_t nh = (uint8_t)((s_head + 1) & 15);
   if (nh != s_tail) {     // drop if the ring is full
     s_ring[s_head] = key;
@@ -137,6 +148,10 @@ int m9KeyboardReadKey() {
 }
 
 bool m9KeyboardSetBacklight(uint8_t duty) {
+  s_last_bl_duty = duty;
+#if defined(PIN_KEY_LED)
+  digitalWrite(PIN_KEY_LED, duty > 0 ? HIGH : LOW);
+#endif
   if (!s_inited || !s_bus) return false;   // controller not found yet (see the probe note above)
   s_bus->beginTransmission(s_address);
   s_bus->write(M9_KB_REG_BACKLIGHT);

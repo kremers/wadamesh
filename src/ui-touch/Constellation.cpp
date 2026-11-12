@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Constellation.h"
+#include "device_caps.h"   // CAP_DATE_WRAP
 
 #include <initializer_list>
 #include <math.h>
@@ -50,6 +51,9 @@ lv_obj_t* s_info_n   = nullptr;
 lv_obj_t* s_info_t   = nullptr;
 lv_obj_t* s_batt     = nullptr;   // [bolt] 86% [battery]
 lv_obj_t* s_batt_chg = nullptr;
+#if CAP_CST_BATT_NOTE
+lv_obj_t* s_batt_n   = nullptr;   // CstStatus::batt_note, hidden while empty
+#endif
 lv_obj_t* s_batt_l   = nullptr;
 lv_obj_t* s_batt_i   = nullptr;
 lv_obj_t* s_halo     = nullptr;
@@ -231,6 +235,20 @@ lv_obj_t* row(lv_obj_t* parent, lv_coord_t gap) {
 
 const lv_font_t* small() { return s_th.small ? s_th.small : LV_FONT_DEFAULT; }
 const lv_font_t* strong() { return s_th.strong ? s_th.strong : small(); }
+// Large or Huge text on a portrait panel: the status face is taller than the Normal one,
+// so the lines at the bottom (or top) edge get more room.
+bool bigText() {
+#if !CAP_DATE_WRAP
+  return false;   // a landscape-only panel (device_caps.h)
+#else
+  return s_portrait && lv_font_get_line_height(small()) > lv_font_get_line_height(&lv_font_montserrat_12);
+#endif
+}
+#if !CAP_DATE_WRAP
+constexpr int s_date_lines = 1;   // never wrapped there (setDate)
+#else
+int s_date_lines = 1;   // 2 when the date is wrapped (setDate)
+#endif
 
 // Recency to opacity. A node heard in the last ten minutes is solid; one not
 // heard for six hours is a ghost. This is the part that makes a quiet night
@@ -276,6 +294,9 @@ void layout() {
 void applyTurn(uint32_t now) {
   s_turn_step = now / kTurnStepMs;
   s_rot = (float)(s_turn_step % kTurnSteps) * (360.0f / (float)kTurnSteps);
+#if CAP_SSAVER_NORTH_LOCK
+  if (s_th.north_lock) s_rot = 0.0f;   // north stays up (#706); the drift below still moves
+#endif
   const float t = (float)(now % 1380000u) * (6.2831853f / 1380000.0f);   // across: 23 minutes
   const float u = (float)(now % 1020000u) * (6.2831853f / 1020000.0f);   // up and down: 17 minutes
   s_cx = s_cx0 + (lv_coord_t)lroundf((float)K(5) * sinf(t));
@@ -348,7 +369,8 @@ void flowDrawCb(lv_event_t* e) {
   ld.width = K1(1);
   ld.round_start = ld.round_end = 1;
   const float period = (float)K(9), dash = (float)LV_MAX(2, K(2));
-  const float shift = fmodf((float)((uint64_t)lv_tick_get() * (uint64_t)K(12) % 1000000000ull) / 1000.0f, period);
+  const float shift = s_th.calm ? 0.0f
+      : fmodf((float)((uint64_t)lv_tick_get() * (uint64_t)K(12) % 1000000000ull) / 1000.0f, period);
   for (int f = 0; f < s_nflow; ++f) {
     const Flow& fl = s_flow[f];
     ld.color = C(s_flow_col[f]);
@@ -726,7 +748,7 @@ void sweepTimerCb(lv_timer_t*) {
 // image; s_static itself stays hidden, so LVGL never walks it during a frame.
 // Without the memory for it, the scene is simply drawn live.
 void staticCache() {
-  if (!s_static || !s_static_img) return;
+  if (!s_static || !s_static_img || s_th.calm) return;   // calm draws no mesh at all
   if (!s_static_buf)
     s_static_buf = static_cast<lv_color_t*>(lv_mem_alloc(sizeof(lv_color_t) * (size_t)s_w * (size_t)s_h));
   lv_disp_t* disp = lv_obj_get_disp(s_static);
@@ -817,7 +839,7 @@ void pingExec(void* var, int32_t v) {
 void hideReady(lv_anim_t* a) { lv_obj_add_flag(static_cast<lv_obj_t*>(a->var), LV_OBJ_FLAG_HIDDEN); }
 
 void pingAt(lv_coord_t x, lv_coord_t y, uint32_t col) {
-  if (!s_root) return;
+  if (!s_root || s_th.calm) return;
   lv_obj_t* o = s_ping[s_next_ping];
   s_next_ping = (s_next_ping + 1) % kPings;
   lv_anim_del(o, pingExec);
@@ -851,7 +873,7 @@ void dotStart(lv_anim_t* a) { lv_obj_clear_flag(static_cast<lv_obj_t*>(a->var), 
 // A packet travelling one leg of its path. Delayed legs stay hidden until they
 // start, so a two-hop arrival reads as one dot handed on by the repeater.
 void launchDot(Pt from, Pt to, uint32_t delay_ms, uint32_t col) {
-  if (!s_root) return;
+  if (!s_root || s_th.calm) return;
   const int i = s_next_dot;
   s_next_dot = (s_next_dot + 1) % kDots;
   lv_obj_t* o = s_dot[i];
@@ -1033,18 +1055,21 @@ void reserveHud() {
   const lv_coord_t g = K(4);
   boxTake({ (lv_coord_t)(s_cx - K(14)), (lv_coord_t)(s_cy - K(14)), (lv_coord_t)(s_cx + K(14)), (lv_coord_t)(s_cy + K(14)) });
   boxTake(s_north_box);   // the N, wherever the turn has it
-  const lv_coord_t clock_block = K(14) + ch + K(7) + lh + g;
+  const lv_coord_t clock_block = K(14) + ch + K(7) + lh * s_date_lines + g;
   if (s_portrait) {
     const bool top = (s_hud & 1) == 0;
     const lv_coord_t x0 = s_w / 2 - cw / 2 - g, x1 = s_w / 2 + cw / 2 + g;
+    // The unread count and the mesh line, as placeHud stacks them.
+    const lv_coord_t band_bot = bigText() ? K(12) + 2 * lh + g : K(30) + lh + g;
+    const lv_coord_t band_top = bigText() ? K(22) + 2 * lh + g : K(30) + lh + g;
     if (top) {
       boxTake({ x0, 0, x1, clock_block });
       boxTake({ (lv_coord_t)(s_w - K(70)), 0, s_w, (lv_coord_t)(K(6) + lh + g) });
-      boxTake({ 0, (lv_coord_t)(s_h - K(30) - lh - g), s_w, s_h });
+      boxTake({ 0, (lv_coord_t)(s_h - band_bot), s_w, s_h });
     } else {
       boxTake({ x0, (lv_coord_t)(s_h - clock_block), x1, s_h });
       boxTake({ (lv_coord_t)(s_w - K(70)), (lv_coord_t)(s_h - K(6) - lh - g), s_w, s_h });
-      boxTake({ 0, 0, s_w, (lv_coord_t)(K(30) + lh + g) });
+      boxTake({ 0, 0, s_w, band_top });
     }
   } else {
     const bool right = s_hud == 1 || s_hud == 2, bottom = s_hud >= 2;
@@ -1074,18 +1099,21 @@ void placeHud() {
   else               lv_obj_add_flag(s_clock, LV_OBJ_FLAG_HIDDEN);
   const lv_coord_t stack = s_clock_shown ? clock_h + K(7) : 0;   // the date under the clock
   if (s_portrait) {
+    // Large / Huge text: the mesh line sits lower, and the unread count a full line
+    // above it, where the Normal offsets left the taller lines overlapping.
+    const bool big = bigText();
     if ((s_hud & 1) == 0) {
       lv_obj_align(s_clock, LV_ALIGN_TOP_MID, 0, K(14));
       lv_obj_align(s_date, LV_ALIGN_TOP_MID, 0, K(14) + stack);
       lv_obj_align(s_batt, LV_ALIGN_TOP_RIGHT, -K(10), K(6));
-      lv_obj_align(s_unread, LV_ALIGN_BOTTOM_MID, 0, -K(30));
-      lv_obj_align(s_info, LV_ALIGN_BOTTOM_MID, 0, -K(12));
+      lv_obj_align(s_unread, LV_ALIGN_BOTTOM_MID, 0, big ? -(K(6) + lh + K(6)) : -K(30));
+      lv_obj_align(s_info, LV_ALIGN_BOTTOM_MID, 0, big ? -K(6) : -K(12));
     } else {
       lv_obj_align(s_date, LV_ALIGN_BOTTOM_MID, 0, -K(14));
-      lv_obj_align(s_clock, LV_ALIGN_BOTTOM_MID, 0, -(K(14) + lh + K(7)));
+      lv_obj_align(s_clock, LV_ALIGN_BOTTOM_MID, 0, -(K(14) + lh * s_date_lines + K(7)));
       lv_obj_align(s_batt, LV_ALIGN_BOTTOM_RIGHT, -K(10), -K(6));
       lv_obj_align(s_unread, LV_ALIGN_TOP_MID, 0, K(12));
-      lv_obj_align(s_info, LV_ALIGN_TOP_MID, 0, K(12) + lh + K(6));
+      lv_obj_align(s_info, LV_ALIGN_TOP_MID, 0, K(12) + lh + (big ? K(10) : K(6)));
     }
     return;
   }
@@ -1103,7 +1131,7 @@ void placeHud() {
     lv_obj_align(s_batt, far_bot, -sx * K(14), -K(10));
   } else {
     lv_obj_align(s_date, near_bot, sx * K(15), -K(12));
-    lv_obj_align(s_clock, near_bot, sx * K(14), -(K(12) + lh + K(7)));
+    lv_obj_align(s_clock, near_bot, sx * K(14), -(K(12) + lh * s_date_lines + K(7)));
     lv_obj_align(s_unread, far_bot, -sx * K(14), -K(12));
     lv_obj_align(s_info, near_top, sx * K(14), K(10));
     lv_obj_align(s_batt, far_top, -sx * K(14), K(10));
@@ -1112,6 +1140,33 @@ void placeHud() {
 void placeClock(bool shown) {
   s_clock_shown = shown;
   placeHud();
+}
+// The date, on two lines when one does not fit across the screen (Large or Huge text
+// on a portrait panel): "SUN" over "12 JUN", or "CLOCK NOT SET" over the uptime.
+void setDate(const char* date) {
+#if !CAP_DATE_WRAP
+  lv_label_set_text(s_date, date);   // always one line there (device_caps.h)
+#else
+  char b[48];
+  snprintf(b, sizeof b, "%s", date);
+  int lines = 1;
+  if (lv_txt_get_width(b, (uint32_t)strlen(b), small(), K1(1), LV_TEXT_FLAG_NONE) > s_w - 2 * K(10)) {
+    char* cut = strstr(b, " \xC2\xB7 ");   // " · "
+    if (cut) {
+      *cut = '\n';
+      memmove(cut + 1, cut + 4, strlen(cut + 4) + 1);
+    } else {
+      cut = strchr(b, ' ');
+      if (cut) *cut = '\n';
+    }
+    if (cut) lines = 2;
+  }
+  lv_label_set_text(s_date, b);
+  if (lines != s_date_lines) {
+    s_date_lines = lines;
+    placeHud();
+  }
+#endif
 }
 
 void hudOpaExec(void* var, int32_t v) {
@@ -1137,6 +1192,12 @@ void hudHiddenReady(lv_anim_t*) {
 }
 void hudMove() {
   if (!s_root || s_hud_moving || !s_clock) return;
+  if (s_th.calm) {   // straight to the next corner, no fade
+    s_hud = (s_hud + 1) % (s_portrait ? 2 : 4);
+    placeHud();
+    s_sig = 0;
+    return;
+  }
   s_hud_moving = true;
   lv_anim_t a;
   lv_anim_init(&a);
@@ -1215,7 +1276,7 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
   s_core = disc(s_scene, s_cx, s_cy, K(8));
   lv_obj_set_style_bg_color(s_core, C(s_th.glow), 0);
   lv_obj_set_style_bg_opa(s_core, LV_OPA_COVER, 0);
-  {
+  if (!s_th.calm) {
     lv_anim_t a;
     lv_anim_init(&a);
     lv_anim_set_var(&a, s_core);
@@ -1227,7 +1288,7 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
     lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
     lv_anim_start(&a);
   }
-  {
+  if (!s_th.calm) {
     lv_anim_t a;
     lv_anim_init(&a);
     lv_anim_set_var(&a, s_halo);
@@ -1238,6 +1299,9 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
     lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
     lv_anim_start(&a);
+  } else {   // the plain face: only the status, on the bare background
+    for (lv_obj_t* o : { s_static, s_static_img, s_flow_obj, s_self_ring, s_halo, s_core_glow, s_core })
+      lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
   }
 
   for (int i = 0; i < kPings; ++i) {
@@ -1256,8 +1320,8 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
     lv_obj_add_flag(s_dot[i], LV_OBJ_FLAG_HIDDEN);
   }
 
-  // The radar sweep, over the mesh and under the status.
-  {
+  // The radar sweep, over the mesh and under the status (none when calm).
+  if (!s_th.calm) {
     uint32_t seed = 0x9E3779B9u;
     for (int i = 0; i < kClutter; ++i) {
       seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
@@ -1285,6 +1349,9 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
   lv_obj_set_style_text_letter_space(s_clock, -K1(1), 0);
   s_date  = text(s_scene, small(), s_th.sub);
   lv_obj_set_style_text_letter_space(s_date, K1(1), 0);
+#if CAP_DATE_WRAP
+  if (s_portrait) lv_obj_set_style_text_align(s_date, LV_TEXT_ALIGN_CENTER, 0);   // a wrapped date (setDate)
+#endif
 
   s_unread = row(s_scene, K(3));
   {
@@ -1297,7 +1364,7 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
     lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_bg_color(dot, C(s_th.glow), 0);
     lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
-    lv_obj_set_style_shadow_width(dot, K(6), 0);
+    lv_obj_set_style_shadow_width(dot, s_th.calm ? 0 : K(6), 0);
     lv_obj_set_style_shadow_color(dot, C(s_th.glow), 0);
     lv_obj_set_style_shadow_opa(dot, 150, 0);
     lv_obj_add_flag(slot, LV_OBJ_FLAG_OVERFLOW_VISIBLE);   // the glow reaches past the slot
@@ -1311,6 +1378,11 @@ void cstShow(lv_obj_t* parent, const CstTheme& theme) {
   s_info_t = text(s_info, small(), s_th.sub);
 
   s_batt     = row(s_scene, K(4));
+#if CAP_CST_BATT_NOTE
+  s_batt_n   = text(s_batt, small(), s_th.sub);
+  lv_obj_set_style_pad_right(s_batt_n, K(2), LV_PART_MAIN);
+  lv_obj_add_flag(s_batt_n, LV_OBJ_FLAG_HIDDEN);
+#endif
   s_batt_chg = text(s_batt, small(), s_th.glow);
   lv_label_set_text(s_batt_chg, LV_SYMBOL_CHARGE);
   s_batt_l   = text(s_batt, small(), s_th.sub);
@@ -1354,6 +1426,9 @@ void cstHide() {
   s_unread = s_unread_n = s_unread_w = nullptr;
   s_info = s_info_n = s_info_t = nullptr;
   s_batt = s_batt_chg = s_batt_l = s_batt_i = nullptr;
+#if CAP_CST_BATT_NOTE
+  s_batt_n = nullptr;
+#endif
   for (int i = 0; i < kPings; ++i) s_ping[i] = nullptr;
   for (int i = 0; i < kDots; ++i) s_dot[i] = nullptr;
   s_n = 0;
@@ -1452,7 +1527,7 @@ void cstSetStatus(const CstStatus& s) {
   const bool all = !s_st_set;
   if (all || strcmp(s.clock, s_st.clock) != 0) lv_label_set_text(s_clock, s.clock);
   if (all || s.clock_ok != s_st.clock_ok) placeClock(s.clock_ok);
-  if (all || strcmp(s.date, s_st.date) != 0) lv_label_set_text(s_date, s.date);
+  if (all || strcmp(s.date, s_st.date) != 0) setDate(s.date);
   if (all || s.unread != s_st.unread || strcmp(s.unread_word, s_st.unread_word) != 0) {
     if (s.unread > 0) {
       char b[8];
@@ -1496,8 +1571,15 @@ void cstSetStatus(const CstStatus& s) {
       lv_obj_invalidate(s_batt_i);
     }
   }
+#if CAP_CST_BATT_NOTE
+  if (all || strcmp(s.batt_note, s_st.batt_note) != 0) {
+    lv_label_set_text(s_batt_n, s.batt_note);
+    if (s.batt_note[0]) lv_obj_clear_flag(s_batt_n, LV_OBJ_FLAG_HIDDEN);
+    else                lv_obj_add_flag(s_batt_n, LV_OBJ_FLAG_HIDDEN);
+  }
+#endif
   if (all || s.north_up != s_st.north_up) {
-    if (s.north_up) lv_obj_clear_flag(s_north, LV_OBJ_FLAG_HIDDEN);
+    if (s.north_up && !s_th.calm) lv_obj_clear_flag(s_north, LV_OBJ_FLAG_HIDDEN);
     else            lv_obj_add_flag(s_north, LV_OBJ_FLAG_HIDDEN);
     staticCache();
   }
@@ -1547,7 +1629,7 @@ void cstTick(uint32_t now_ms) {
   // Burn-in: the mesh takes its next step round and drifts (applyTurn), and the
   // status moves to another corner every two minutes (a fade out, a whole move, a
   // fade in). The sweep keeps every part of the mesh changing in between.
-  if (now_ms / kTurnStepMs != s_turn_step) {
+  if (!s_th.calm && now_ms / kTurnStepMs != s_turn_step) {   // calm has no mesh to turn
     applyTurn(now_ms);
     ringsBuild();
     if (s_self_ring) lv_obj_set_pos(s_self_ring, s_cx - K(15) / 2, s_cy - K(15) / 2);

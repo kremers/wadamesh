@@ -320,6 +320,22 @@ bool     touchPrefsSetReportedBeta(uint16_t n);
 // when the UI is built, so a change takes effect after a restart.
 bool     touchPrefsGetCondenseNav();
 bool     touchPrefsSetCondenseNav(bool on);
+
+// Remove old contacts (#719, Settings > Contact Management): while on, contacts not
+// heard from in the given number of days (1..999, default 30) are deleted.
+// Favourites are always kept. Default off.
+constexpr uint16_t TOUCH_CT_PURGE_DEFAULT_DAYS = 30;
+constexpr uint16_t TOUCH_CT_PURGE_MIN_DAYS = 1;
+constexpr uint16_t TOUCH_CT_PURGE_MAX_DAYS = 999;
+bool     touchPrefsGetContactPurge();
+bool     touchPrefsSetContactPurge(bool on);
+uint16_t touchPrefsGetContactPurgeDays();
+bool     touchPrefsSetContactPurgeDays(uint16_t days);
+
+// The Chats "U" (unread only) chip (#824): while on, the inbox lists only threads with unread
+// messages, within the active All / Channels / Direct chip. Default off.
+bool     touchPrefsGetChatsUnreadOnly();
+bool     touchPrefsSetChatsUnreadOnly(bool on);
 /** Where the navigation bar sits (Settings > Display > Navigation bar). Stored in the
  *  v66 condense_nav byte, so no schema change: 0 bottom (the default) and 1 right (the
  *  old Condense Nav rail) keep their meaning; 2 top and 3 left are new. Read once when
@@ -403,6 +419,12 @@ bool touchPrefsReadUseSdAtBoot();
  *  device so the UI rebuilds at the new orientation. */
 uint8_t touchPrefsGetUiRotation();
 bool    touchPrefsSetUiRotation(uint8_t rot);
+#if defined(HELTEC_LORA_V4_R8)
+uint8_t touchPrefsGetRotKept();              // landscape the user kept (0xFF = none yet)
+void    touchPrefsSetRotKept(uint8_t r);
+bool    touchPrefsGetRotTrying();            // a landscape boot is waiting for "Keep"
+void    touchPrefsSetRotTrying(bool on);
+#endif
 // Pre-storage boot copy of the rotation (raw NVS), for the boot logo. Falls back
 // to touchPrefsGetUiRotation() when absent. Sync after touchPrefsReload().
 uint8_t touchPrefsGetBootUiRotation();
@@ -550,11 +572,18 @@ uint16_t touchPrefsGetMapMarkerCap();
 void     touchPrefsSetMapMarkerCap(uint16_t n);
 bool    touchPrefsGetIgnoreTinyMsgs();
 void    touchPrefsSetIgnoreTinyMsgs(bool on);
+bool    touchPrefsGetHideTakTexts();
+void    touchPrefsSetHideTakTexts(bool on);
 void    touchPrefsSetSoundMentions(bool on);
 bool    touchPrefsGetSoundDirect();            // direct/DM chime on/off, default true
 void    touchPrefsSetSoundDirect(bool on);
 uint8_t touchPrefsGetSoundVolume();            // 0..100, default 70
 void    touchPrefsSetSoundVolume(uint8_t vol);
+bool    touchPrefsGetVibrate();                // vibrate on notifications (boards with a motor), default false (Pager: true)
+void    touchPrefsSetVibrate(bool on);
+uint8_t touchPrefsGetVibratePattern();         // TOUCH_VIB_* style, default TOUCH_VIB_PULSE
+void    touchPrefsSetVibratePattern(uint8_t pat);
+enum { TOUCH_VIB_PULSE = 0, TOUCH_VIB_GENTLE, TOUCH_VIB_LONG, TOUCH_VIB_HEARTBEAT, TOUCH_VIB_COUNT };
 
 /** Do Not Disturb: silences the incoming-message chime during a daily time
  *  window. Start/end are half-hour slots (0..47, slot = hour*2 + (min>=30)),
@@ -618,10 +647,49 @@ uint8_t touchPrefsGetScreensaverBatterySecs();
 void    touchPrefsSetScreensaverBatterySecs(uint8_t secs);
 bool    touchPrefsGetScreensaverAlwaysOnPower();
 void    touchPrefsSetScreensaverAlwaysOnPower(bool on);
+// Keep north up (#706): the Constellation does not turn. Standalone key, default off.
+bool    touchPrefsGetScreensaverNorthUp();
+void    touchPrefsSetScreensaverNorthUp(bool on);
 bool    touchPrefsGetLockPreviews();           // message text on the lock screen's unread cards (default true)
 void    touchPrefsSetLockPreviews(bool on);
 bool    touchPrefsGetGlanceWhenLocked();       // "at a glance" also fires while manually/idle locked, not just unlocked+dimmed (default false)
 void    touchPrefsSetGlanceWhenLocked(bool on);
+#if defined(TLORA_PAGER)
+bool    touchPrefsGetVibrateInput();          // Pager: a click per key / knob detent (default false)
+void    touchPrefsSetVibrateInput(bool on);
+uint8_t touchPrefsGetVibrateKeyLevel();       // 0 off, 1 light, 2 strong (the vib_in key; its old "on" = strong)
+void    touchPrefsSetVibrateKeyLevel(uint8_t level);
+uint8_t touchPrefsGetVibrateStrength();       // 0 light, 1 medium, 2 strong (default 2)
+void    touchPrefsSetVibrateStrength(uint8_t s);
+uint8_t touchPrefsGetVibratePattern(uint8_t kind);   // kind 0 message, 1 DM, 2 @mention -> PagerVibPattern
+void    touchPrefsSetVibratePattern(uint8_t kind, uint8_t pattern);
+// Pager charging (Settings > Battery > Charging). Deliberately not in the backup:
+// a restore must never bring back a limit someone else chose to take a risk with.
+uint16_t touchPrefsGetChargeMa();            // fast-charge current, mA (default 704)
+void     touchPrefsSetChargeMa(uint16_t ma);
+uint16_t touchPrefsGetChargeMv();            // charge voltage, mV (default 4288)
+void     touchPrefsSetChargeMv(uint16_t mv);
+uint8_t  touchPrefsGetChargeTmax();          // stop charging above this, deg C; 0 = guard off (default 45)
+void     touchPrefsSetChargeTmax(uint8_t c);
+uint8_t  touchPrefsGetChargeTmin();          // stop charging below this, deg C (default 0)
+void     touchPrefsSetChargeTmin(uint8_t c);
+bool     touchPrefsGetChargeCare();          // battery care: stop at 80 %, resume below 75 % (default off)
+void     touchPrefsSetChargeCare(bool on);
+uint32_t touchPrefsGetBattDayKey();          // local date (YYYYMMDD) the daily mAh count below belongs to
+void     touchPrefsSetBattDayKey(uint32_t key);
+uint32_t touchPrefsGetBattDayMah();          // mAh drawn: today in the low 16 bits, the day before in the high
+void     touchPrefsSetBattDayMah(uint32_t v); // (0xFFFF = not known). Not in the backup: it is this pack's.
+uint32_t touchPrefsGetBattUse();             // average draw on battery: 0.1 mA low 16 bits, minutes seen high
+void     touchPrefsSetBattUse(uint32_t v);
+#endif
+#if defined(TLORA_PAGER) || defined(HAS_THINKNODE_M9) || defined(HAS_M9_IMU)
+bool     touchPrefsGetLowBattWarn();         // warn at 20 / 10 %, switch off at 3 % (default on)
+void     touchPrefsSetLowBattWarn(bool on);
+bool     touchPrefsGetFaceDownQuiet();       // lying face down: screen off, no sound or vibration (default off)
+void     touchPrefsSetFaceDownQuiet(bool on);
+bool     touchPrefsGetPickupWake();          // lifting it off a table lights the screen (default off)
+void     touchPrefsSetPickupWake(bool on);
+#endif
 bool    touchPrefsGetGlanceEnabled();          // master "at a glance" feature toggle (default true)
 void    touchPrefsSetGlanceEnabled(bool on);
 
@@ -716,6 +784,19 @@ uint8_t touchPrefsGetColorStyle();
 void    touchPrefsSetColorStyle(uint8_t style);
 bool    touchPrefsGetRainbow();
 void    touchPrefsSetRainbow(bool on);
+// Settings > Theme > Colour > Mute colours and animations (default OFF, at next boot):
+// no animations or boot splash, a muted palette, no background, glass or see-through
+// layers. The looks above keep their saved values and return when it is turned off.
+bool    touchPrefsGetMuted();
+void    touchPrefsSetMuted(bool on);
+// Its tone (TOUCH_MUTE_TONE_*, default Slate), and whether the tone colours the whole
+// screen (default ON) or only the accent.
+enum : uint8_t { TOUCH_MUTE_TONE_SLATE = 0, TOUCH_MUTE_TONE_SEPIA, TOUCH_MUTE_TONE_GREY,
+                 TOUCH_MUTE_TONE_SAGE, TOUCH_MUTE_TONE_DUSK, TOUCH_MUTE_TONE_N };
+uint8_t touchPrefsGetMuteTone();
+void    touchPrefsSetMuteTone(uint8_t tone);
+bool    touchPrefsGetMuteTint();
+void    touchPrefsSetMuteTint(bool whole);
 // Settings > Theme > Glass tiles: Home widgets, cards and control panel tiles are frosted
 // glass over the background (default ON, today's look); off = opaque panel-colour fills.
 bool    touchPrefsGetGlassTiles();
@@ -736,6 +817,14 @@ uint32_t touchPrefsGetBackgroundColor();
 void     touchPrefsSetBackgroundColor(uint32_t rgb);
 int      touchPrefsGetBackgroundImage(char* out, int out_cap);   // "sd:/path" or an internal path
 bool     touchPrefsSetBackgroundImage(const char* path);
+// How strongly a picture of your own is toned down behind the text: the Theme's
+// background picture (darkened by night, lightened by day) and the lock-screen wallpaper
+// (a black veil). TOUCH_DIM_STRONG, the default, is the look before the setting existed.
+enum : uint8_t { TOUCH_DIM_OFF = 0, TOUCH_DIM_LIGHT = 1, TOUCH_DIM_MEDIUM = 2, TOUCH_DIM_STRONG = 3 };
+uint8_t  touchPrefsGetBackgroundDim();
+void     touchPrefsSetBackgroundDim(uint8_t level);
+uint8_t  touchPrefsGetLockDim();
+void     touchPrefsSetLockDim(uint8_t level);
 
 /** Tanmatsu message-notification LED: flash the envelope-icon LED on a new message and breathe it
  *  softly while there are unread messages. Default ON. Tanmatsu-only (no such LED on T-Deck/V4). */
@@ -757,15 +846,18 @@ int  touchPrefsGetTimeOffsetHours();
 bool touchPrefsSetTimeOffsetHours(int hours);
 
 /** Time-zone picker. A curated list of named zones, each carrying the correct
- *  POSIX TZ string WITH that region's DST rules — so non-European users get the
+ *  POSIX TZ string WITH that region's DST rules, so non-European users get the
  *  right time year-round instead of being stuck on the CET base + EU DST dates.
- *  Default 0 == "Europe (CET/CEST)" (unchanged behaviour). The LAST index is
+ *  Zones are identified by a PERMANENT id (helpers/TimeZones.h: the saved value);
+ *  the picker shows them in its own order, row -> id via touchPrefsTimezoneAt().
+ *  Default id 0 == "Europe (CET/CEST)" (unchanged behaviour). Id 16 is
  *  "Custom (UTC offset)", which uses touchPrefsGetTimeOffsetHours() as a fixed,
  *  no-DST offset. touchPrefsBuildLocalTz() resolves the selected zone. */
-int         touchPrefsTimezoneCount();           // number of pickable entries
-const char* touchPrefsTimezoneLabel(int idx);    // display label for the picker
-uint8_t     touchPrefsGetTimezone();             // selected index (default 0)
-void        touchPrefsSetTimezone(uint8_t idx);
+int         touchPrefsTimezoneCount();           // number of picker rows
+int         touchPrefsTimezoneAt(int row);       // picker row -> zone id
+const char* touchPrefsTimezoneLabel(int id);     // display label of a zone id
+uint8_t     touchPrefsGetTimezone();             // selected zone id (default 0)
+void        touchPrefsSetTimezone(uint8_t id);
 
 /** Build the POSIX TZ string for local-time display from the selected time zone
  *  (touchPrefsGetTimezone), or a fixed UTC offset for the "Custom" entry. Used by
@@ -784,7 +876,13 @@ bool touchPrefsSetSetupDone(bool done);
  *  override lets the user match their hardware without a rebuild. Read at GPS
  *  init; `fallback` is the compile-time default. Applied on reboot. */
 uint32_t touchPrefsGetGpsBaud(uint32_t fallback);
-bool     touchPrefsSetGpsBaud(uint32_t baud);
+bool     touchPrefsSetGpsBaud(uint32_t baud);   // 0 = no choice ("Auto")
+/** Whether the user picked a speed (touchPrefsSetGpsBaud with a non-zero baud). */
+bool     touchPrefsGpsBaudChosen();
+/** The speed the probe locked on while nothing was picked (CAP_GPS_BAUD_FIND
+ *  boards). touchPrefsGetGpsBaud returns it when there is no choice, so the next
+ *  start opens the UART at the right speed. Written only when it changes. */
+void     touchPrefsSetGpsBaudFound(uint32_t baud);
 
 /** Mesh signal auto-discover probe. When ON (default), the firmware periodically
  *  sends a flood advert so nearby repeaters re-broadcast it and we can measure

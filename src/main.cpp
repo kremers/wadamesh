@@ -5,6 +5,11 @@
   #include <new>               // placement-new for the PSRAM-resident the_mesh
   #include "esp_heap_caps.h"   // heap_caps_malloc(MALLOC_CAP_SPIRAM)
   #include <esp_sntp.h>        // completion status for normal + cold-boot time sync
+#if defined(HAS_THINKNODE_M9)
+  #include <esp_task_wdt.h>    // WDT suspend around multi-second SPIFFS format on first boot
+#endif
+  #include "helpers/esp32/SntpClockPush.h"   // every SNTP result -> the mesh clock (and its RTC chip)
+static SntpClockPush s_sntp_push;
 #endif
 #if defined(ESP32_PLATFORM) && defined(HAS_TOUCH_UI)
 #include <Preferences.h>
@@ -17,13 +22,17 @@
 #include "helpers/esp32/SdNvsPrefs.h"        // route prefs to file storage (SD/SPIFFS), off NVS
                                              // (quoted: use wadamesh's src/ copy, not the lib's stale one)
 #include "helpers/esp32/BootTimeSync.h"      // opt-in cold-boot clock sync over saved Wi-Fi (#383)
+#include "helpers/WifiRejoinPolicy.h"         // when the loop rejoins a dropped/failed Wi-Fi link (#685)
 #include "ui-touch/i18n.h"                    // translated Pager transport-state alerts
 #include "wadamesh_mark_rgb.h"               // anti-aliased mesh-mark (RGB565) for the pre-LVGL boot screen
 #include "ui-touch/TouchSleep.h"             // idle light-sleep controller (loopEnd called at end of loop())
 #include "ui-touch/device_caps.h"            // CAP_BLE_KEYBOARD: keyboard mode keeps the phone link paused from boot
 #endif
 
-#if defined(WADA_LVGL_O2)
+#if defined(HAS_THINKNODE_M9)
+// ThinkNode M9: nested LVGL + shared-SPI SD/FATFS + Lua frames exceed the 8 KB default.
+SET_LOOP_TASK_STACK_SIZE(12 * 1024);
+#elif defined(WADA_LVGL_O2)
 // LVGL compiled at -O2 (scripts/build/perf_lvgl.py) goes 160 bytes deeper into the
 // loop task's stack at its deepest (measured on the T-Deck: 2108 -> 1948 bytes left of
 // the framework's 8 KB). 1 KB more leaves more room than before; the draw band that
@@ -1063,7 +1072,15 @@ void setup() {
   // ("Store data on SD"). The SD shares the LoRa SPI bus, already brought up by
   // radio_init() above, so SD.begin's spi.begin is a no-op. Graceful: any SD
   // failure falls back to SPIFFS so the device always boots.
+#if defined(HAS_THINKNODE_M9)
+  // Keep SPIFFS internal work/cache buffers in internal DRAM (4096 B threshold)
+  // rather than Octal PSRAM (256 B threshold) during flash operations.
+  heap_caps_malloc_extmem_enable(4096);
   bool spiffs_ok = SPIFFS.begin(false);   // try first WITHOUT auto-format
+  heap_caps_malloc_extmem_enable(256);
+#else
+  bool spiffs_ok = SPIFFS.begin(false);   // try first WITHOUT auto-format
+#endif
   bool sd_storage = false;
 #if defined(HAS_WIO_TRACKER_L2)
   // This target uses a dedicated one-bit SD_MMC bus rather than the LoRa SPI
@@ -1173,6 +1190,7 @@ void setup() {
     if (!sd_mounted) Serial.println("[BOOT] CrowPanel SD unavailable; using SPIFFS");
 #elif defined(TLORA_PAGER)
     sdMountDiagBegin();
+    uint32_t pager_sd_hz = 4000000;
     if (!_spi) {
       Serial.println("[BOOT] SD: shared SPI unavailable");
     } else if (!board.sdCardPresent()) {
@@ -1212,8 +1230,15 @@ void setup() {
         digitalWrite(PIN_SD_CS, HIGH);
       }
       Serial.printf("[BOOT] SD mount: %s\n", sd_mounted ? "ok" : "failed");
+      // Raise the operating clock once the 4 MHz mount has proved the card
+      // (read-verified, falls back to 4 MHz; no-op without SD_SPI_FAST_HZ).
+      if (sd_mounted) {
+        pager_sd_hz = sdTryFastClock(PIN_SD_CS, *_spi, 4000000, "BOOT");
+        sd_mounted = pager_sd_hz != 0;
+        if (sd_mounted) { extern uint32_t g_sd_operating_hz; g_sd_operating_hz = pager_sd_hz; }
+      }
     }
-    sdMountDiagSetMounted(sd_mounted, sd_mounted ? 4000000 : 0);
+    sdMountDiagSetMounted(sd_mounted, sd_mounted ? pager_sd_hz : 0);
 #else
     sdMountDiagBegin();
     uint32_t mounted_hz = 0;
@@ -1369,7 +1394,11 @@ void setup() {
           }
           // On a genuine first run, persist the auto-pick so the "Store data on SD"
           // toggle reflects it and the choice sticks on every later boot.
+#if defined(HAS_THINKNODE_M9)
+          if ((fresh_install || !spiffs_ok) && sd_storage && !use_sd_pref) {
+#else
           if (fresh_install && sd_storage && !use_sd_pref) {
+#endif
             Preferences _p; if (_p.begin("touch", false)) { _p.putBool("use_sd", true); _p.end(); }
             Serial.println("[BOOT] first run + SD card present -> data defaults to SD");
           }
@@ -1443,7 +1472,19 @@ void setup() {
   // that can afford a multi-second blocking format (before the Wi-Fi/event tasks
   // exist, or deferred to a UI-driven action with a progress notice), and to
   // confirm on hardware that a cold first-format boot survives.
+#if defined(HAS_THINKNODE_M9)
+  if (!spiffs_ok) {
+    // M9-only: keep SPIFFS work/cache buffers in internal DRAM during format/mount,
+    // and suspend the task watchdog around the blocking 3.375 MB SPIFFS format.
+    heap_caps_malloc_extmem_enable(4096);
+    esp_task_wdt_delete(NULL);
+    spiffs_ok = SPIFFS.begin(true);
+    esp_task_wdt_add(NULL);
+    heap_caps_malloc_extmem_enable(256);
+  }
+#else
   if (!sd_storage && !spiffs_ok) SPIFFS.begin(true);   // last resort: format SPIFFS
+#endif
   Serial.printf("[BOOT] storage: %s\n", sd_storage ? "SD /meshcomod" : "SPIFFS");
 #if defined(ESP32_PLATFORM) && defined(HAS_TOUCH_UI)
   // The card holds this device's data but did not mount: say so on screen, and keep the
@@ -1518,6 +1559,13 @@ void setup() {
   Serial.println("[BOOT] wifiConfig ok");
 
 #if defined(ESP32_PLATFORM) && defined(HAS_TOUCH_UI)
+  // Settings > Clock > "Sync clock from system" with Wi-Fi up: restart SNTP from the
+  // Wi-Fi loop below and report its result (SntpClockPush::rekick). The hook lives in
+  // UITask.cpp so the boards that never compile this file (P4 IDF) link without it.
+  {
+    extern void (*g_sntp_resync_hook)();
+    g_sntp_resync_hook = [] { s_sntp_push.rekick = true; };
+  }
   /* Cold-boot clock acquisition over SAVED Wi-Fi (#383, BootTimeSync.h).
    *
    * HERE, and nowhere later, on purpose: after wifiConfigBegin() (so the saved
@@ -1824,9 +1872,17 @@ void loop() {
 #endif
   static bool wifi_started = false;
   static uint32_t last_wifi_retry_ms = 0;
-  static const uint32_t WIFI_RETRY_INTERVAL_MS = 10000;
   static bool wifi_radio_prev = true;
   static bool wifi_radio_inited = false;
+  static WifiRejoinPolicy wifi_rejoin;   // retry timing: grace on link loss, back-off, wake kick
+#ifdef DISPLAY_CLASS
+  static bool wifi_screen_was_off = false;
+  {   // the screen coming back on asks for one prompt rejoin if the link is down (#685)
+    const bool off = ui_task.isScreenOff();
+    if (wifi_screen_was_off && !off) wifi_rejoin.noteWake();
+    wifi_screen_was_off = off;
+  }
+#endif
   /* Run the saved Wi-Fi state machine whenever its radio preference is on.
    * Pager setup separately guarantees that Wi-Fi claims its coexistence
    * resources before a cold BLE start. */
@@ -2000,6 +2056,7 @@ void loop() {
           WiFi.begin(ssid, pwd[0] ? pwd : nullptr);
         }
         last_wifi_retry_ms = millis();
+        wifi_rejoin.noteAttempt(last_wifi_retry_ms);
 #if defined(TLORA_PAGER) && defined(BLE_PIN_CODE)
       } else if (wifi_mode_ready) {
         wifiConfigSetPagerWifiBlePhase(PagerWifiBlePhase::Idle);
@@ -2021,12 +2078,19 @@ void loop() {
 #endif
       }
     }
-    // Automatic WiFi recovery for TCP mode: retry connection periodically if link drops.
-    // Suppressed while a scan runs on the worker: WiFi.disconnect()+begin() here would
-    // abort the in-flight sweep (the scan-while-connected "0 networks" bug).
-    if (wifiConfigHasRuntime() && WiFi.status() != WL_CONNECTED && !wifiScanIsActive()) {
+    // Automatic WiFi recovery for TCP mode: rejoin when the link is down. WHEN is
+    // WifiRejoinPolicy's call (unit-tested in test/test_wifi_rejoin_policy.cpp): a link
+    // that just dropped is left to the driver's own reconnect for a grace window first
+    // (this used to fire on the very pass that saw the drop, racing Arduino's
+    // auto-reconnect for the same association), nothing runs while a scan owns the radio
+    // (disconnect()+begin() would abort the in-flight sweep, the scan-while-connected
+    // "0 networks" bug), repeated failures back off, and waking the screen asks for one
+    // prompt attempt.
+    {
+      const WifiRejoinPolicy::Inputs rejoin_in = {
+        true, wifiConfigHasRuntime(), WiFi.status() == WL_CONNECTED, wifiScanIsActive() };
       uint32_t now = millis();
-      if ((uint32_t)(now - last_wifi_retry_ms) >= WIFI_RETRY_INTERVAL_MS) {
+      if (wifi_rejoin.shouldRejoin(rejoin_in, now)) {
         last_wifi_retry_ms = now;
 #if defined(TLORA_PAGER) && defined(BLE_PIN_CODE)
         s_pager_ble_after_wifi = wifiConfigGetBleEnabled();
@@ -2056,17 +2120,20 @@ void loop() {
         wifiConfigGetPwd(pwd, sizeof(pwd));
         if (strlen(ssid) > 0) {
           // A bare begin() on a supplicant wedged after a silent drop (AP reboot /
-          // beacon loss) can be a no-op — clear its state first so this forces a
-          // fresh association. Backs up setAutoReconnect(true) for the stuck case.
-          WiFi.disconnect(false, true);
+          // beacon loss) can be a no-op, so leave the BSS first to force a fresh
+          // association. Without erasing the stored network: disconnect(false, true)
+          // here was the retry that stayed "disconnected", while the same disconnect
+          // without the erase plus begin (what an apply after a scan runs) joins (#685).
+          WiFi.disconnect(false, false);
+          delay(50);
           WiFi.begin(ssid, pwd[0] ? pwd : nullptr);
         }
       }
     }
-    /* SNTP: kick off when Wi-Fi associates; once system time syncs, push it
-     * into the mesh RTC so timestamps on messages are accurate. */
-    static bool sntp_kicked = false;
-    static bool sntp_pushed = false;
+    /* SNTP: kick off when Wi-Fi associates; every time system time syncs (the
+     * first result and SNTP's own hourly re-syncs), push it into the mesh RTC so
+     * timestamps on messages are accurate and an RTC chip gets it too
+     * (SntpClockPush.h has why "first result only" was not enough). */
     if (WiFi.status() == WL_CONNECTED) {
 #if defined(TLORA_PAGER) && defined(BLE_PIN_CODE)
       wifiConfigSetPagerWifiBlePhase(PagerWifiBlePhase::Connected);
@@ -2111,7 +2178,7 @@ void loop() {
         WiFi.setSleep(true);
         modem_sleep_set = true;
       }
-      if (!sntp_kicked) {
+      if (s_sntp_push.wantKick()) {
         /* Brussels timezone with DST rules baked in (POSIX "CET-1CEST,...").
          * On touch builds the base is shifted by the user's manual hour offset
          * (Settings -> Device -> Time offset) so localtime() matches what they
@@ -2124,18 +2191,21 @@ void loop() {
         strncpy(_tz, "CET-1CEST,M3.5.0,M10.5.0/3", sizeof _tz);
         _tz[sizeof _tz - 1] = '\0';
 #endif
-  esp_sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
+        esp_sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
         configTzTime(_tz, "pool.ntp.org", "time.google.com");
-        sntp_kicked = true;
-      } else if (!sntp_pushed &&
-     esp_sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) {
-        time_t t = time(nullptr);
-        if (t > (time_t)ClockFloorRTC::MIN_VALID_EPOCH &&
-            t <= (time_t)ClockFloorRTC::MAX_PLAUSIBLE_EPOCH) {
+      } else {
+        // get_sync_status() reads AND resets: COMPLETED comes back once per sync.
+        const bool completed = esp_sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED;
+        const time_t t = time(nullptr);
+        bool report = false;
+        if (s_sntp_push.shouldPush(completed, (uint32_t)t, ClockFloorRTC::MIN_VALID_EPOCH,
+                                   ClockFloorRTC::MAX_PLAUSIBLE_EPOCH, &report)) {
           /* Mesh RTC stores UTC seconds (protocol-facing); display layer
            * converts to local via localtime_r() using the TZ from configTzTime. */
           rtc_clock.setCurrentTime((uint32_t)t);
-          sntp_pushed = true;
+#if defined(HAS_TOUCH_UI)
+          if (report) ui_task.showAlert(TR("Clock synced"), 1200);   // answers "Sync clock from system"
+#endif
         }
       }
     } else {
@@ -2144,7 +2214,7 @@ void loop() {
         wifiConfigSetPagerWifiBlePhase(PagerWifiBlePhase::Idle);
 #endif
       // Link dropped: allow re-sync on next reconnect.
-      if (sntp_kicked && !sntp_pushed) sntp_kicked = false;
+      s_sntp_push.linkDown();
     }
 #if defined(TLORA_PAGER) && defined(BLE_PIN_CODE)
     if (s_pager_wifi_ble_deadline_ms != 0 &&
@@ -2172,6 +2242,7 @@ void loop() {
 #ifdef DISPLAY_CLASS
   { uint32_t _wfdt = millis() - _wf0; if (_wfdt >= 200) stallLog("wifi-sm", _wfdt); }
 #endif
+  serial_interface.retireWebCodeIfIdle();   // the tick below only runs with Wi-Fi up
   // Defer TCP and WebSocket until after splash dismisses so the_mesh.loop() never blocks on accept() before ui_task.loop() runs.
   static const uint32_t TCP_DEFER_MS = 5000;   // 5 s: don't start TCP/WS until version screen has dismissed
   /* Only start TCP / WS when WiFi was actually brought up. In BLE-only mode

@@ -54,13 +54,21 @@ class WadaNmeaLocationProvider : public LocationProvider {
   uint32_t _active_baud = 0;
   uint32_t _probe_deadline_ms = 0;
   bool _stream_locked = false;
+  // Probe only while the user has not picked a speed, and keep what it finds apart
+  // from that choice (CAP_GPS_BAUD_FIND boards). Off: the probe always runs and the
+  // speed it finds becomes the setting (CAP_GPS_BAUD_AUTO boards).
+  bool _keep_choice = false;
   bool _ubx_standby = false;      // rest in software standby (setUbxStandby)
   uint8_t _wake_tries = 0;
   uint32_t _wake_check_ms = 0;    // when begin() looks for the stream again (0: not waiting)
+  uint32_t _valid_sentences = 0;  // checksummed sentences since boot (the GPS page shows them)
+  uint32_t _last_valid_ms = 0;    // millis() of the last one (0: none yet)
   static const unsigned long TIME_SYNC_INTERVAL = 1800000;  // re-sync every 30 minutes
   static const unsigned long BAUD_PROBE_START_MS = 9000;
   static const unsigned long BAUD_PROBE_INTERVAL_MS = 5000;
   static const unsigned long WAKE_CHECK_MS = 1500;
+  static const unsigned long WAKE_SLOW_MS = 30000;
+  static const uint8_t WAKE_FAST_TRIES = 5;
 
   void nudgeReceiver() {
     if (!_probe_serial) return;
@@ -80,6 +88,9 @@ class WadaNmeaLocationProvider : public LocationProvider {
                                 (sizeof(candidates) / sizeof(candidates[0])));
       if (candidate == 0 || candidate == _active_baud) continue;
       _probe_serial->end();
+#if defined(HAS_THINKNODE_M9)
+      _probe_serial->setRxBufferSize(4096);
+#endif
       _probe_serial->setPins(_probe_rx, _probe_tx);
       _probe_serial->begin(candidate);
       nmea.clear();
@@ -87,6 +98,9 @@ class WadaNmeaLocationProvider : public LocationProvider {
       _active_baud = candidate;
       _probe_deadline_ms = millis() + BAUD_PROBE_INTERVAL_MS;
       nudgeReceiver();
+      // A receiver left stopped only hears the start at its own speed, and a stopped one
+      // sends nothing for the probe to lock on to, so every candidate gets one.
+      ubxGnss(true);
       return;
     }
   }
@@ -119,8 +133,10 @@ class WadaNmeaLocationProvider : public LocationProvider {
     if (!_probe_serial || _stream_locked) return;
     _stream_locked = true;
     _probe_deadline_ms = 0;
-    if (touchPrefsGetGpsBaud(_probe_default_baud) != _active_baud)
-      (void)touchPrefsSetGpsBaud(_active_baud);
+    if (touchPrefsGetGpsBaud(_probe_default_baud) == _active_baud) return;
+    // One write per change of receiver, from the loop task (a valid sentence, not input).
+    if (_keep_choice) touchPrefsSetGpsBaudFound(_active_baud);
+    else              (void)touchPrefsSetGpsBaud(_active_baud);
   }
 
 public:
@@ -151,8 +167,9 @@ public:
 
   WadaNmeaLocationProvider(HardwareSerial& ser, mesh::RTCClock* clock,
                            int pin_reset, int pin_en, int serial_rx, int serial_tx,
-                           uint32_t default_baud)
+                           uint32_t default_baud, bool keep_choice = false)
       : WadaNmeaLocationProvider(static_cast<Stream&>(ser), clock, pin_reset, pin_en) {
+    _keep_choice = keep_choice;
     _probe_serial = &ser;
     _probe_rx = (int8_t)serial_rx;
     _probe_tx = (int8_t)serial_tx;
@@ -186,24 +203,54 @@ public:
 
   void begin() override {
     claim();
+    // Whatever the parser holds is from before the receiver stopped: its fix flag, its date
+    // and its time of day. Left in place, loop() saw "valid for > 2 s" at once and, with the
+    // 30-minute re-sync due (it always is after a long enough rest), set the clock to the
+    // moment the receiver went to rest. With the GPS saver resting it 2 to 30 minutes at a
+    // time, that is the clock running behind by up to half an hour (Discord, ThinkNode M9).
+    // A cleared parser needs three seconds of FRESH valid sentences before it sets the clock.
+    nmea.clear();
+    time_valid = 0;
     // What waited in the UART while the receiver rested is old news, and it would read as
     // the stream being back before the receiver has woken.
-    if (_ubx_standby) while (_gps_serial->available()) _gps_serial->read();
+    if (_pin_en == -1) while (_gps_serial->available()) _gps_serial->read();
     if (_pin_en != -1) digitalWrite(_pin_en, _en_active);
     if (_pin_reset != -1) digitalWrite(_pin_reset, !GPS_RESET_ACTIVE);
+#if defined(HAS_THINKNODE_M9)
+    if (_probe_serial && _probe_rx >= 0 && _probe_tx >= 0) {
+      // Re-attach UART1 RX/TX pins after stop() tri-stated them to prevent ESD back-powering.
+      _probe_serial->setPins(_probe_rx, _probe_tx);
+    }
+#endif
     if (_pin_en != -1 && _post_enable) _post_enable();
     if (_probe_serial) {
+#if defined(HAS_THINKNODE_M9)
+      const uint32_t want_baud = touchPrefsGetGpsBaud(_probe_default_baud);
+      if (_active_baud != 0 && _active_baud != want_baud) {
+        _probe_serial->end();
+        _probe_serial->setRxBufferSize(1024);
+        if (_probe_rx >= 0 && _probe_tx >= 0) _probe_serial->setPins(_probe_rx, _probe_tx);
+        _probe_serial->begin(want_baud);
+      }
+      _active_baud = want_baud;
+#else
       _active_baud = touchPrefsGetGpsBaud(_probe_default_baud);
+#endif
       _probe_cursor = 0;
-      _stream_locked = false;
-      _probe_deadline_ms = millis() + BAUD_PROBE_START_MS;
+      // A speed the user picked is used as it is: no probe, nothing saved.
+      const bool probe = !(_keep_choice && touchPrefsGpsBaudChosen());
+      _stream_locked = !probe;
+      _probe_deadline_ms = probe ? millis() + BAUD_PROBE_START_MS : 0;
       nudgeReceiver();
     }
     ubxGnss(true);
-    // A receiver in standby spends the first bytes waking up, so the start may be lost;
-    // loop() repeats the nudge and the start until the stream is back.
+    // The start can be lost: a receiver in standby spends the first bytes waking up, and
+    // one that was told to stop a moment ago (the boot sequence stops it, then starts it)
+    // can drop a start that follows too closely. A stopped receiver sends nothing, so it
+    // would stay silent until the next restart of the GPS (#778). loop() repeats the nudge
+    // and the start until sentences flow again.
     _wake_tries = 0;
-    _wake_check_ms = _ubx_standby ? millis() + WAKE_CHECK_MS : 0;
+    _wake_check_ms = _pin_en == -1 ? millis() + WAKE_CHECK_MS : 0;
   }
 
   void reset() override {
@@ -211,19 +258,36 @@ public:
       digitalWrite(_pin_reset, GPS_RESET_ACTIVE);
       delay(10);
       digitalWrite(_pin_reset, !GPS_RESET_ACTIVE);
+#if defined(HAS_THINKNODE_M9)
+      if (_claims > 0 && _pin_en != -1 && _post_enable) _post_enable();
+#endif
     }
   }
 
   void stop() override {
+#if defined(HAS_THINKNODE_M9)
+    ubxGnss(false);
+#endif
     if (_pin_en != -1) digitalWrite(_pin_en, !_en_active);
     // LOW, not GPS_RESET_ACTIVE — the zero-current park level for both reset
     // circuits (see the constructor comment; on the M9 "asserted" = GPIO HIGH
     // through R46 into Q16's base = a constant drain while the GPS is off).
     if (_pin_reset != -1) digitalWrite(_pin_reset, LOW);
+#if defined(HAS_THINKNODE_M9)
+    // Prevent UART1 TX/RX from back-powering the unpowered GPS IC through its
+    // upper ESD protection diodes while _pin_en cuts VCC.
+    if (_pin_en != -1 && _probe_tx >= 0) pinMode(_probe_tx, INPUT);
+    if (_pin_en != -1 && _probe_rx >= 0) pinMode(_probe_rx, INPUT);
+  #if defined(PIN_GPS_STANDBY)
+    pinMode(PIN_GPS_STANDBY, INPUT);
+  #endif
+#endif
     _probe_deadline_ms = 0;
     _stream_locked = false;
     _wake_check_ms = 0;
+#if !defined(HAS_THINKNODE_M9)
     ubxGnss(false);
+#endif
     release();
   }
 
@@ -253,6 +317,12 @@ public:
 
   void sendSentence(const char* sentence) override { nmea.sendSentence(*_gps_serial, sentence); }
 
+  // For the GPS page: is the receiver talking at all? Satellites at 0 with sentences
+  // arriving is a receiver still searching; no sentences is a silent or mis-clocked one.
+  uint32_t validSentences() const { return _valid_sentences; }
+  uint32_t msSinceValidSentence() const { return _last_valid_ms ? millis() - _last_valid_ms : UINT32_MAX; }
+  uint32_t activeBaud() const { return _active_baud; }
+
   // ---- the addition -------------------------------------------------------
   // Speed and course over ground from the last RMC sentence. MicroNMEA stores
   // knots×1000 and degrees×1000, LONG_MIN after clear(). An EMPTY course field
@@ -275,19 +345,6 @@ public:
   }
 
   void loop() override {
-    if (_wake_check_ms) {
-      if (_gps_serial->available()) {
-        _wake_check_ms = 0;   // the stream is back
-      } else if ((int32_t)(millis() - _wake_check_ms) >= 0) {
-        if (++_wake_tries > 5) {
-          _wake_check_ms = 0;   // give up quietly; the baud probe and the UI carry on as before
-        } else {
-          nudgeReceiver();
-          ubxGnss(true);
-          _wake_check_ms = millis() + WAKE_CHECK_MS;
-        }
-      }
-    }
     while (_gps_serial->available()) {
       char c = _gps_serial->read();
 #ifdef GPS_NMEA_DEBUG
@@ -297,8 +354,29 @@ public:
       nmea.process(c);
       if (sentence_end) {
         const char* sentence = nmea.getSentence();
-        if (sentence && sentence[0] == '$' && MicroNMEA::testChecksum(sentence))
+        if (sentence && sentence[0] == '$' && MicroNMEA::testChecksum(sentence)) {
+          _valid_sentences++;
+          _last_valid_ms = millis();
+          if (!_last_valid_ms) _last_valid_ms = 1;
           noteValidSentence();
+        }
+      }
+    }
+
+    if (_wake_check_ms && (int32_t)(millis() - _wake_check_ms) >= 0) {
+      // A sentence from inside this last window, not any byte: the tail of what a stopping
+      // receiver sent is still in the UART when the start goes out.
+      if (_last_valid_ms && millis() - _last_valid_ms < WAKE_CHECK_MS) {
+        // Flowing, but keep watching: a receiver still finishing an earlier stop goes on
+        // sending for a moment after the start, then falls silent for good.
+        _wake_tries = 0;
+        _wake_check_ms = millis() + WAKE_SLOW_MS;
+      } else {
+        const bool fast = _wake_tries < WAKE_FAST_TRIES;
+        if (fast) _wake_tries++;
+        nudgeReceiver();
+        ubxGnss(true);
+        _wake_check_ms = millis() + (fast ? WAKE_CHECK_MS : WAKE_SLOW_MS);
       }
     }
 

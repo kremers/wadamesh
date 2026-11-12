@@ -1,7 +1,7 @@
 # wadamesh language file
 # canonical source - translators: edit this file and PR it
 # code: cs
-# ver: 29
+# ver: 33
 # name: Čeština
 # base: cs
  (device behind)	 (zařízení za)
@@ -145,6 +145,7 @@ Broker host / IP	Hostitel / IP brokeru
 Buffered receive (experimental)	Vyrovnávací příjem (experimentální)
 Built-in	Vestavěné
 Built-in (default)	Vestavěné (výchozí)
+Default	Výchozí
 CR	CR
 Calibrate battery (full = 100%)	Kalibrovat baterii (plná = 100 %)
 Calibrated: 100%% = %u.%02u V  (long-press to reset)	Kalibrováno: 100%% = %u.%02u V  (dlouhým stiskem obnovíte výchozí)
@@ -401,6 +402,7 @@ Image too large (>4 MB)	Obrázek je příliš velký (>4 MB)
 Import	Importovat
 Import backup	Importovat zálohu
 Import failed (bad/unreadable JSON)	Import se nezdařil (vadný/nečitelný JSON)
+Import failed: internal storage unavailable. Identity, channels and contacts were not saved.	Import failed: internal storage unavailable. Identity, channels and contacts were not saved.
 Import settings	Importovat nastavení
 Import this backup?\nReplaces identity,\nchannels & contacts,\nthen reboots.	Importovat tuto zálohu?\nNahradí identitu,\nkanály a kontakty\na poté restartuje.
 Import: storage unavailable	Import: úložiště není dostupné
@@ -560,9 +562,11 @@ No contact to trace	Žádný kontakt ke sledování
 No contacts have shared\na GPS location yet.	Žádný kontakt zatím nesdílel\nGPS polohu.
 No discovered nodes yet.\n\nAnything heard over the air that isn't in your contacts will show up here. When auto-add is off, you can manually add nodes to your contacts.	Zatím žádné objevené uzly.\n\nCokoli zachycené rádiem, co není ve vašich kontaktech, se zobrazí zde. Když je automatické přidávání vypnuté, můžete uzly přidat do kontaktů ručně.
 No earlier versions yet	Zatím žádné starší verze
+No internal storage: identity, channels and contacts can't be saved.	No internal storage: identity, channels and contacts can't be saved.
 No local expansion data	Žádná lokální data rozšíření
 No location for this contact	Pro tento kontakt není žádná poloha
 No map storage.\n\nInsert an SD card to cache\nWi-Fi tiles (or reflash to\nrestore the tiles partition).	Žádné úložiště map.\n\nVložte SD kartu pro ukládání\nWi-Fi dlaždic (nebo znovu nahrajte\noddíl dlaždic).
+No map storage on this board.\n\nIt has no tiles partition and\nno microSD the map can use.	No map storage on this board.\n\nIt has no tiles partition and\nno microSD the map can use.
 No map tiles here.\n\nConnect to Wi-Fi (Settings → Wi-Fi)\nto download this area.	Zde nejsou žádné mapové dlaždice.\n\nPřipojte se k Wi-Fi (Nastavení → Wi-Fi)\npro stažení této oblasti.
 No mapped repeaters in this route	Na této trase nejsou žádné zmapované opakovače
 No networks found (2.4 GHz only)	Nenalezena žádná síť (pouze 2,4 GHz)
@@ -1144,6 +1148,7 @@ Signal (stale)	Signál (zastaralý)
 nothing heard yet	zatím nic zachyceno
 Detecting the keyboard protocol	Zjišťování protokolu klávesnice
 Older keyboard protocol	Starší protokol klávesnice
+Device	Zařízení
 Using the older keyboard protocol	Používá se starší protokol klávesnice
 turn on if your keyboard types the wrong letters; disables modifier latching	zapněte, pokud klávesnice píše nesprávná písmena; vypne blokování modifikátorů
 Formatted OK - card did not remount, reinsert it	Naformátováno OK - karta se znovu nepřipojila, vložte ji znovu
@@ -1337,19 +1342,19 @@ held by	held by
 %lu packets heard	%lu packets heard
 1 node heard today	1 node heard today
 1 packet heard	1 packet heard
-1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:
-3. Click Connect and choose this device.	3. Click Connect and choose this device.
+1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Připojte toto zařízení k počítači kabelem USB.\n2. Otevřete tuto adresu v Chrome nebo Edge:
+3. Click Connect and choose this device.	3. Klikněte na Připojit a vyberte toto zařízení.
 4 numbers or letters	4 numbers or letters
-A day	A day
-A week	A week
+A day	Den
+A week	Týden
 Add a channel	Přidat kanál
-Add, download or delete files on this device from a computer.	Add, download or delete files on this device from a computer.
+Add, download or delete files on this device from a computer.	Přidávejte, stahujte nebo mažte soubory v tomto zařízení z počítače.
 Advertise	Advertise
 Always on when connected to power	Always on when connected to power
-Anything worth saying (optional)	Anything worth saying (optional)
+Anything worth saying (optional)	Cokoli dalšího (nepovinné)
 App drawer	App drawer
 App icons	App icons
-Append timestamp	Append timestamp
+Append timestamp	Připojit časové razítko
 Apr	Apr
 April	April
 Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.	Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.
@@ -1366,19 +1371,19 @@ Clock not set	Clock not set
 Cmdr	Cmdr
 Commander	Commander
 Companion	Companion
-Connected to the computer	Connected to the computer
-Could not send the report. Try again later.	Could not send the report. Try again later.
-Count this device	Count this device
+Connected to the computer	Připojeno k počítači
+Could not send the report. Try again later.	Hlášení se nepodařilo odeslat. Zkuste to později.
+Count this device	Započítat toto zařízení
 Current PIN	Current PIN
 Cursor	Cursor
 Dec	Dec
 December	December
 Delete this conversation?	Delete this conversation?
-Device id	Device id
+Device id	ID zařízení
 Direct	Direct
 Direct message	Direct message
 Direct, no repeaters	Direct, no repeaters
-Double-tap SPACE while typing to switch	Double-tap SPACE while typing to switch
+Double-tap SPACE while typing to switch	Pro přepnutí při psaní dvakrát klepněte na MEZERNÍK
 Emoji	Emoji
 Enter PIN	Enter PIN
 Enter it again	Enter it again
@@ -1387,35 +1392,35 @@ Feb	Feb
 February	February
 Fri	Fri
 Friday	Friday
-Has a problem	Has a problem
+Has a problem	Má problém
 Heard by %u repeaters	Heard by %u repeaters
 Heard by 1 repeater	Heard by 1 repeater
 Hold the trackball to switch	Hold the trackball to switch
 Home button opens	Home button opens
-I hit a problem	I hit a problem
+I hit a problem	Narazil jsem na problém
 I understand	I understand
 If you forget your PIN, you have to reset the device	If you forget your PIN, you have to reset the device
-Internal	Internal
+Internal	Interní
 It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.	It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.
 Jan	Jan
 January	January
-Join # channel	Join # channel
-Join Public channel	Join Public channel
+Join # channel	Připojit se k # kanálu
+Join Public channel	Připojit se k veřejnému kanálu
 Jul	Jul
 July	July
 Jun	Jun
 June	June
-Keyboard and input	Keyboard and input
-Keyboard attached.\nRestarting in landscape in %d s.	Keyboard attached.\nRestarting in landscape in %d s.
+Keyboard and input	Klávesnice a vstup
+Keyboard attached.\nRestarting in landscape in %d s.	Klávesnice připojena.\nRestart na šířku za %d s.
 Large	Large
 Launcher	Launcher
 Launcher layout	Launcher layout
-Locks when screen off\n(hold the BOOT button to unlock)	Locks when screen off\n(hold the BOOT button to unlock)
-Map and GPS	Map and GPS
-Map tiles	Map tiles
+Locks when screen off\n(hold the BOOT button to unlock)	Zamkne se při vypnuté obrazovce\n(odemknete podržením tlačítka BOOT)
+Map and GPS	Mapa a GPS
+Map tiles	Dlaždice mapy
 Mar	Mar
 March	March
-Mark all as read	Mark all as read
+Mark all as read	Označit vše jako přečtené
 May	May
 Mentions muted	Mentions muted
 Mentions unmuted	Mentions unmuted
@@ -1424,18 +1429,18 @@ Message %s	Message %s
 Message text on lock screen	Message text on lock screen
 Messages muted	Messages muted
 Messages unmuted	Messages unmuted
-Minutes	Minutes
+Minutes	Minuty
 Mon	Mon
 Monday	Monday
 Mute mentions	Mute mentions
 Mute messages	Mute messages
 Navigate	Navigate
-Never	Never
+Never	Nikdy
 New PIN	New PIN
-No backups available to restore.	No backups available to restore.
+No backups available to restore.	Žádné zálohy k obnovení.
 No backups yet. Use Export Backup above to create one.	No backups yet. Use Export Backup above to create one.
-No channels yet	No channels yet
-No direct chats yet	No direct chats yet
+No channels yet	Zatím žádné kanály
+No direct chats yet	Zatím žádné přímé chaty
 Not delivered, tap to resend	Not delivered, tap to resend
 Nov	Nov
 November	November
@@ -1447,54 +1452,54 @@ PIN changed	PIN changed
 PIN lock	PIN lock
 PIN lock off	PIN lock off
 PIN lock on	PIN lock on
-Phone-app link	Phone-app link
+Phone-app link	Propojení s aplikací v telefonu
 Pick the numbers, or type the PIN	Pick the numbers, or type the PIN
 Preview screensaver	Preview screensaver
-Radio and messaging	Radio and messaging
-Reboot Now	Reboot Now
-Received %s	Received %s
-Receiving %s	Receiving %s
-Region not saved: use a-z, 0-9 and -	Region not saved: use a-z, 0-9 and -
+Radio and messaging	Rádio a zprávy
+Reboot Now	Restartovat nyní
+Received %s	%s přijato
+Receiving %s	Přijímání %s
+Region not saved: use a-z, 0-9 and -	Region neuložen: použijte a-z, 0-9 a -
 Repeater	Repeater
-Report a bug	Report a bug
+Report a bug	Nahlásit chybu
 Reset chat icon	Reset chat icon
 Room	Room
 Routed	Routed
-Running it for	Running it for
-Running it for:	Running it for:
-SD card	SD card
-SD unavailable - insert a FAT32 card and retry	SD unavailable - insert a FAT32 card and retry
+Running it for	Používám už
+Running it for:	Používám už:
+SD card	SD karta
+SD unavailable - insert a FAT32 card and retry	SD není k dispozici - vložte kartu FAT32 a zkuste znovu
 Sat	Sat
 Saturday	Saturday
-Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.
-Screen timeout	Screen timeout
+Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Řekněte, zda tento build funguje na vaší desce, aby se stabilní verze vydávala na základě důkazů, a ne proto, že si nikdo nestěžoval. Hlášení chyby se otevře jako QR kód: naskenujte jej a odešlete z telefonu pod svým účtem GitHub.
+Screen timeout	Vypnutí obrazovky
 Screensaver	Screensaver
 Scroll	Scroll
 Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.	Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.
-Send	Send
-Send a test report	Send a test report
-Send another test report	Send another test report
-Sending %s	Sending %s
-Sending your report...	Sending your report...
+Send	Odeslat
+Send a test report	Odeslat testovací hlášení
+Send another test report	Odeslat další testovací hlášení
+Sending %s	Odesílání %s
+Sending your report...	Odesílání hlášení…
 Sensor	Sensor
 Sep	Sep
 September	September
 Share my contact	Sdílet můj kontakt
-Stop USB Files	Stop USB Files
-Storage and SD	Storage and SD
+Stop USB Files	Zastavit soubory USB
+Storage and SD	Úložiště a SD
 Sun	Sun
 Sunday	Sunday
-Tap the EN key on the keyboard to switch	Tap the EN key on the keyboard to switch
-Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.
+Tap the EN key on the keyboard to switch	Pro přepnutí klepněte na klávesu EN na klávesnici
+Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Sdělí testovací matici, kolik zařízení tento build používá, aby šlo desku bez hlášení odlišit od desky, kterou nikdo nemá. Odesílá jen desku a verzi, nic jiného.
 Terminal	Terminal
-Test report: %s	Test report: %s
-Thank you. Your report is on wadamesh.com/beta	Thank you. Your report is on wadamesh.com/beta
+Test report: %s	Testovací hlášení: %s
+Thank you. Your report is on wadamesh.com/beta	Děkujeme. Vaše hlášení je na wadamesh.com/beta
 The PINs did not match	The PINs did not match
 The mesh around you instead of a dark screen. Every ring is a real packet.	The mesh around you instead of a dark screen. Every ring is a real packet.
-This is everything that leaves the device. No name, no contacts, no position.	This is everything that leaves the device. No name, no contacts, no position.
+This is everything that leaves the device. No name, no contacts, no position.	Toto je vše, co opouští zařízení. Žádné jméno, žádné kontakty, žádná poloha.
 Thu	Thu
 Thursday	Thursday
-Tick only what you actually used:	Tick only what you actually used:
+Tick only what you actually used:	Zaškrtněte jen to, co jste opravdu používali:
 Too many chat icons	Too many chat icons
 Too many tries. Wait %u s	Too many tries. Wait %u s
 Trackball	Trackball
@@ -1502,30 +1507,30 @@ Trackball: scroll	Trackball: scroll
 Transfer	Transfer
 Tue	Tue
 Tuesday	Tuesday
-Turn Wi-Fi on to send a report	Turn Wi-Fi on to send a report
+Turn Wi-Fi on to send a report	Pro odeslání hlášení zapněte Wi-Fi
 Type 4 numbers or letters	Type 4 numbers or letters
-USB Files	USB Files
-USB Files: low memory	USB Files: low memory
+USB Files	Soubory USB
+USB Files: low memory	Soubory USB: málo paměti
 Unmute mentions	Unmute mentions
 Unmute messages	Unmute messages
-Upload of %s stopped	Upload of %s stopped
-Used	Used
+Upload of %s stopped	Nahrávání %s zastaveno
+Used	Použito
 VNC	VNC
-Waiting for the computer	Waiting for the computer
+Waiting for the computer	Čekání na počítač
 Web	Web
 Wed	Wed
 Wednesday	Wednesday
-While this screen is open, the companion app cannot use USB.	While this screen is open, the companion app cannot use USB.
-Works	Works
+While this screen is open, the companion app cannot use USB.	Dokud je tato obrazovka otevřená, doprovodná aplikace nemůže používat USB.
+Works	Funguje
 Wrong PIN	Wrong PIN
 You:	You:
-a week or more	a week or more
-about a day	about a day
+a week or more	týden a déle
+about a day	asi den
 heard %s ago	heard %s ago
-hold the BOOT button to unlock	hold the BOOT button to unlock
+hold the BOOT button to unlock	odemknete podržením tlačítka BOOT
 hop away	hop away
 hops away	hops away
-minutes	minutes
+minutes	minuty
 new	new
 node	node
 nodes	nodes
@@ -1596,14 +1601,13 @@ Community preset	Komunitní předvolba
 Connected to %s	Connected to %s
 Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.	Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.
 Custom UTC offset	Custom UTC offset
-Device	Device
 Direct messages	Direct messages
 Double-tap SPACE to cycle through English and the layouts you turn on.	Double-tap SPACE to cycle through English and the layouts you turn on.
 Encryption	Encryption
 Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.	Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.
 Experimental. Throttles the processor while the device sits idle.	Experimental. Throttles the processor while the device sits idle.
 Export	Export
-Export backup	Export backup
+Export backup	Exportovat zálohu
 Firmware	Firmware
 Firmware %s\nDevelopment build: the update check is off.	Firmware %s\nDevelopment build: the update check is off.
 Flashes on a new message and breathes while any are unread.	Flashes on a new message and breathes while any are unread.
@@ -1645,7 +1649,7 @@ Navigation	Navigation
 Navigation bar	Navigation bar
 New messages	New messages
 No GPS module on this device. You can still set your advert position by hand in Profile.	No GPS module on this device. You can still set your advert position by hand in Profile.
-No backups yet. Use Export backup above to create one.	No backups yet. Use Export backup above to create one.
+No backups yet. Use Export backup above to create one.	Zatím žádné zálohy. Vytvořte ji tlačítkem „Exportovat zálohu“ výše.
 No limit	No limit
 No messages yet.\nSay hello!	No messages yet.\nSay hello!
 No network chosen yet.	No network chosen yet.
@@ -1707,14 +1711,13 @@ Text console	Text console
 Text size	Text size
 Text size saved, restarting to apply it…	Text size saved, restarting to apply it…
 The MQTT bridge is not in this build.	The MQTT bridge is not in this build.
-The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.	The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.
 The arrows and Enter always work. These letters are extra: tap a row, then press a key.	The arrows and Enter always work. These letters are extra: tap a row, then press a key.
 The tab keys, over the navigation bar's icons.	The tab keys, over the navigation bar's icons.
 The touchscreen ignores taps until you unlock.	The touchscreen ignores taps until you unlock.
 This device has no speaker.	This device has no speaker.
 Time on air	Time on air
 Top	Top
-Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Turn on if your keyboard types the wrong letters. It turns off modifier latching.
+Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Zapněte, pokud klávesnice píše nesprávná písmena. Vypne blokování modifikátorů.
 Turn on only if your repeater re-floods just one region. Otherwise it can block logins and direct messages across regions.	Povolte pouze tehdy, pokud váš opakovač znovu šíří pouze jeden region. Jinak ponechte vypnuto — může blokovat přihlášení/DM mezi regiony.
 Typing	Typing
 Unreleased test firmware: newer features, less tested. The update check and Install update both follow it.	Přijímat nevydaný testovací firmware — novější funkce, ale méně otestované. Kontrola aktualizací i Instalovat aktualizaci používají beta kanál.
@@ -2199,3 +2202,255 @@ Powering off… press reset to wake	Vypínání… probudíte stisknutím reset
 Low	Low
 F11 on the keyboard steps through these too.	Klávesa F11 na klávesnici přepíná tyto úrovně také.
 Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.	Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.
+Auto	Auto
+Auto tries the common speeds until the GPS answers and keeps the one that works. Pick a speed only if Auto does not find it. Applies after a restart.	Auto tries the common speeds until the GPS answers and keeps the one that works. Pick a speed only if Auto does not find it. Applies after a restart.
+Rooms	Rooms
+Auto-delete: on	Automatické mazání: zapnuto
+Auto-delete: off	Automatické mazání: vypnuto
+Contact Management	Správa kontaktů
+Delete after %d days	Smazat po %d dnech
+Removed %d old contact(s)	Odstraněno starých kontaktů: %d
+Pulse	Puls
+Gentle	Jemný
+Long	Dlouhý
+Heartbeat	Tep srdce
+Keep north up	Keep north up
+The mesh stays put instead of slowly turning around you.	The mesh stays put instead of slowly turning around you.
+Map file	Map file
+Folder tiles only	Folder tiles only
+rename the file to the folder name	rename the file to the folder name
+not a PNG raster archive	not a PNG raster archive
+file incomplete, copy it again	file incomplete, copy it again
+not a PMTiles v3 file	not a PMTiles v3 file
+No map files found. Copy a PNG archive to\n/maps/<name>/<name>.pmtiles	No map files found. Copy a PNG archive to\n/maps/<name>/<name>.pmtiles
+Zoom: map levels only	Zoom: map levels only
+No map levels found on the SD card	No map levels found on the SD card
+%d mA · %u:%02u left	%d mA · %u:%02u left
+%d mA · %u:%02u to full	%d mA · %u:%02u to full
+%d.%d °C · %u cycles · health %u%%	%d.%d °C · %u cycles · health %u%%
+%u / %u mAh · %s left	%u / %u mAh · %s left
+%u / %u mAh · %s left at your usage	%u / %u mAh · %s left at your usage
+%u / %u mAh · full in %s	%u / %u mAh · full in %s
+@ mention	@ mention
+A click for each keypress and each turn of the knob.	A click for each keypress and each turn of the knob.
+Apply to the fuel gauge	Apply to the fuel gauge
+Back to 1500 mAh	Back to 1500 mAh
+Back to safe defaults	Back to safe defaults
+Battery at %d%%: charge soon	Battery at %d%%: charge soon
+Battery care	Battery care
+Battery care: kept at 80%, running from USB	Battery care: kept at 80%, running from USB
+Battery empty: switching off in 10 s to protect it. Plug in to cancel.	Battery empty: switching off in 10 s to protect it. Plug in to cancel.
+Battery low: %d%%	Battery low: %d%%
+Battery pack	Battery pack
+Battery temperature OK, charging again	Battery temperature OK, charging again
+Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.	Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.
+Capacity (mAh)	Capacity (mAh)
+Charge current	Charge current
+Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.	Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.
+Charge limits	Charge limits
+Charge only to 80%	Charge only to 80%
+Charge to	Charge to
+Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.	Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.
+Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.	Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.
+Charging %d mA · %d mW	Charging %d mA · %d mW
+Charging back to the safe defaults	Charging back to the safe defaults
+Charging paused: battery too cold	Charging paused: battery too cold
+Charging paused: battery too cold (%d °C)	Charging paused: battery too cold (%d °C)
+Charging paused: battery too hot	Charging paused: battery too hot
+Charging paused: battery too hot (%d °C)	Charging paused: battery too hot (%d °C)
+Charging paused: too cold	Charging paused: too cold
+Charging paused: too hot	Charging paused: too hot
+Charging: switch-off cancelled	Charging: switch-off cancelled
+Drawing %d mA · %d mW	Drawing %d mA · %d mW
+Faster charging heats and wears the battery.	Faster charging heats and wears the battery.
+Fuel gauge not answering	Fuel gauge not answering
+Fuel gauge set. It relearns the pack over the next charges.	Fuel gauge set. It relearns the pack over the next charges.
+It resumes 3 °C below the limit.	It resumes 3 °C below the limit.
+Kept at 80% (battery care)	Kept at 80% (battery care)
+Key click	Key click
+Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Light	Light
+LilyGo fits 1500 mAh. Change it only for a different pack.	LilyGo fits 1500 mAh. Change it only for a different pack.
+Low battery warning	Low battery warning
+Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.
+Never below freezing. It resumes 3 °C above the limit.	Never below freezing. It resumes 3 °C above the limit.
+Once	Once
+Powering off… hold the power key to switch on	Powering off… hold the power key to switch on
+Quiet when face down	Quiet when face down
+Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.	Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.
+Starting the motion sensor…	Starting the motion sensor…
+Stop charging above	Stop charging above
+Stop charging below	Stop charging below
+Stopping lower gives a little less capacity and a longer battery life.	Stopping lower gives a little less capacity and a longer battery life.
+Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.	Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.
+Strength	Strength
+Strong	Strong
+Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.	Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.
+The defaults are the safe ones for this battery. Anything past them asks first.	The defaults are the safe ones for this battery. Anything past them asks first.
+The fuel gauge did not take the new capacity	The fuel gauge did not take the new capacity
+The fuel gauge is already set to this	The fuel gauge is already set to this
+The percentage comes from the battery's fuel gauge, which learns the pack by itself.	The percentage comes from the battery's fuel gauge, which learns the pack by itself.
+Twice	Twice
+Use anyway	Use anyway
+Used today %d mAh · yesterday %s	Used today %d mAh · yesterday %s
+Wake when picked up	Wake when picked up
+Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.	Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.
+last 5 min charging	last 5 min charging
+last 5 min drawing	last 5 min drawing
+not known	not known
+Picture dimming	Ztmavení obrázku
+Wallpaper dimming	Ztmavení tapety
+Darker with Night, lighter with Day, so the text on it stays readable.	S Nocí tmavší, se Dnem světlejší, aby text na něm zůstal čitelný.
+Asking the time server	Asking the time server
+Auto-delete old contacts	Auto-delete old contacts
+Buzz for new messages, even with Sound off. Respects Do Not Disturb.	Buzz for new messages, even with Sound off. Respects Do Not Disturb.
+Connections	Connections
+Days	Days
+Deletes contacts not heard from in the number of days below. Favourites are never deleted.	Deletes contacts not heard from in the number of days below. Favourites are never deleted.
+Downloaded to this computer, and kept in this browser.	Downloaded to this computer, and kept in this browser.
+Import from this computer	Import from this computer
+In the browser, the connection is set in the page bar: Connect reaches your node over Bluetooth, USB or Wi-Fi.	In the browser, the connection is set in the page bar: Connect reaches your node over Bluetooth, USB or Wi-Fi.
+In the browser, the connection is set in the page bar: Connect reaches your node over Wi-Fi, USB or Bluetooth.	In the browser, the connection is set in the page bar: Connect reaches your node over Wi-Fi, USB or Bluetooth.
+No position yet. Allow this page to use your location when the browser asks.	No position yet. Allow this page to use your location when the browser asks.
+Not heard from for this many days, 1 to 999.	Not heard from for this many days, 1 to 999.
+Pattern	Pattern
+Plays once for a message, twice for a DM, three times for an @ mention. Tap one to feel it.	Plays once for a message, twice for a DM, three times for an @ mention. Tap one to feel it.
+Remove old contacts	Remove old contacts
+The map downloads through this computer's own network. Your node's Wi-Fi is set on the node.	The map downloads through this computer's own network. Your node's Wi-Fi is set on the node.
+Vibrate	Vibrate
+Vibration	Vibration
+Your node's own Bluetooth and pairing code are set on the node.	Your node's own Bluetooth and pairing code are set on the node.
+Accents and umlauts	Accents and umlauts
+Back (deletes while typing)	Back (deletes while typing)
+Back from a text field; unlock	Back from a text field; unlock
+Backspace	Backspace
+Caps Lock while typing	Caps Lock while typing
+Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.	Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.
+Edit in Settings > Quick replies	Edit in Settings > Quick replies
+Fn + Backspace	Fn + Backspace
+Fn + Enter	Fn + Enter
+Fn + Shift	Fn + Shift
+Fn + click	Fn + click
+Fn + turn	Fn + turn
+Hold Backspace	Hold Backspace
+Hold Enter	Hold Enter
+Hold Fn	Hold Fn
+Hold H / Hold S	Hold H / Hold S
+Hold Shift	Hold Shift
+Hold Space	Hold Space
+Hold a letter	Hold a letter
+Hold knob	Hold knob
+In a chat: jump to new messages	In a chat: jump to new messages
+Keys and shortcuts	Keys and shortcuts
+Keys and the knob do nothing until you hold Backspace.	Keys and the knob do nothing until you hold Backspace.
+Knob	Knob
+Launcher options / Control panel	Launcher options / Control panel
+Lock the screen	Lock the screen
+M  C  H  A  S	M  C  H  A  S
+More actions (like a long press)	More actions (like a long press)
+Move, click to select	Move, click to select
+Moving aurora stays still while Battery saver is on (Settings > Battery).	Moving aurora stays still while Battery saver is on (Settings > Battery).
+N	N
+Next tab, or scroll inside a screen	Next tab, or scroll inside a screen
+Pan the map; adjust a slider	Pan the map; adjust a slider
+Quiet now	Quiet now
+Quiet now (Do Not Disturb) on / off	Quiet now (Do Not Disturb) on / off
+Quiet now: off	Quiet now: off
+Quiet now: on (hold Shift again to end)	Quiet now: on (hold Shift again to end)
+Screen brightness	Screen brightness
+Shift + click	Shift + click
+Shift + click: brightness	Shift + click: brightness
+Shift + click: volume	Shift + click: volume
+Shift + turn	Shift + turn
+Special characters while typing	Special characters while typing
+Switch the knob to volume	Switch the knob to volume
+Tabs (Settings > Keyboard)	Tabs (Settings > Keyboard)
+This help	This help
+Turn the knob • click to insert	Turn the knob • click to insert
+Turn to scroll, click or any key to close.	Turn to scroll, click or any key to close.
+W A S D,  Q / E	W A S D,  Q / E
+Mute colours and animations	Mute colours and animations
+Mute colours and animations sets these for now.	Mute colours and animations sets these for now.
+Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.	Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.
+Slate	Slate
+Sepia	Sepia
+Grey	Grey
+Sage	Sage
+Dusk	Dusk
+Tone the whole screen	Tone the whole screen
+Off: only the accent takes the tone.	Off: only the accent takes the tone.
+%d book(s)	Knih: %d
+A chapter is missing from this book	V knize chybí kapitola
+Apply the new look? The Pager restarts to apply it.	Použít nový vzhled? Pager se restartuje.
+Back to book	Zpět ke knize
+Books	Knihy
+Cannot open this book	Knihu nelze otevřít
+Cannot read this file	Soubor nelze přečíst
+Cannot show this image	Obrázek nelze zobrazit
+Chapters	Kapitoly
+Continue reading	Pokračovat ve čtení
+Earlier chapters	Dřívější kapitoly
+Ebook needs a newer firmware	E-kniha vyžaduje novější firmware
+End of book	Konec knihy
+External LoRa antenna	Externí anténa LoRa
+Images	Obrázky
+Later chapters	Pozdější kapitoly
+No books. Add .epub files to this app's folder.	Žádné knihy. Přidej soubory .epub do složky aplikace.
+No data from the receiver	Žádná data z přijímače
+No login reply, tracing instead…	Bez odpovědi na přihlášení, sleduji trasu…
+No readable chapters	Žádné čitelné kapitoly
+Not an epub	Není epub
+Opening...	Otevírání...
+Receiver is talking at	Přijímač komunikuje rychlostí
+Section	Oddíl
+Start of book	Začátek knihy
+The book index is too large	Index knihy je příliš velký
+This book is compressed. Repack it with scripts/ebook-prep.py	Kniha je komprimovaná. Přebal ji pomocí scripts/ebook-prep.py
+Use external	Použít externí
+Use the external antenna?\nOnly with an antenna fitted: transmitting into an empty socket can destroy the radio.	Použít externí anténu?\nJen s připojenou anténou: vysílání do prázdného konektoru může zničit rádio.
+Uses the external socket instead of the on-board antenna. Only with an antenna fitted.	Použije externí konektor místo vestavěné antény. Jen s připojenou anténou.
+View image	Zobrazit obrázek
+image	obrázek
+reacted	reagoval(a)
+reacted to	reagoval(a) na
+Hide MediaMesh and TAK texts	Skrýt texty MediaMesh a TAK
+Apps like MeshCore Open TAK send photos, voice and team tracking as text. Messages between apps are dropped, and the rest become a short label such as Photo. A connected phone app still gets everything.	Aplikace jako MeshCore Open TAK posílají fotky, hlas a sledování týmu jako text. Zprávy mezi aplikacemi se zahodí a ostatní se změní na krátký popisek, například Fotka. Připojená aplikace v telefonu dostane dál všechno.
+MediaMesh and TAK texts will be hidden	Texty MediaMesh a TAK budou skryté
+MediaMesh and TAK texts will be shown	Texty MediaMesh a TAK budou zobrazené
+Photo	Fotka
+Voice message	Hlasová zpráva
+Push-to-talk	Push-to-talk
+Encrypted message	Šifrovaná zpráva
+30 sec	30 s
+Peak -- dBm	Špička -- dBm
+Peak %d dBm @ %.1f MHz	Špička %d dBm @ %.1f MHz
+peak %d @ %.1f	špička %d @ %.1f
+Asleep: tap screen or 🤍 to wake	Spí: klepněte na obrazovku nebo 🤍 pro probuzení
+Receiving %s\n%lu / %lu bytes	Přijímání %s\n%lu / %lu bajtů
+Sending %s\n%lu / %lu bytes	Odesílání %s\n%lu / %lu bajtů
+File Transfer	Přenos souborů
+U	N
+Unread only	Jen nepřečtené
+No unread chats	Žádné nepřečtené chaty
+No unread channels	Žádné nepřečtené kanály
+No unread direct chats	Žádné nepřečtené přímé chaty
+Recent	Nedávné
+Smileys	Smajlíci
+People	Lidé
+Nature	Příroda
+Food	Jídlo
+Activity	Aktivity
+Travel	Cestování
+Objects	Objekty
+Symbols	Symboly
+Flags	Vlajky
+Chars	Znaky
+Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.
+Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.	Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.
+\n%d%%, about %lu s left	\n%d%%, zbývá asi %lu s
+\n%d%%, about %lu min left	\n%d%%, zbývá asi %lu min
+Keep this orientation?\nIf the screen does not answer your taps, leave it: it goes back to portrait in %d s.	Ponechat tuto orientaci?\nPokud obrazovka nereaguje na dotyk, nechte ji být: za %d s se vrátí na výšku.
+Back to portrait… restarting	Zpět na výšku… restartuje se
+Keep	Ponechat
+Orientation kept	Orientace ponechána

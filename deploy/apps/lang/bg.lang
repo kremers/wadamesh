@@ -1,7 +1,7 @@
 # wadamesh language file
 # canonical source - translators: edit this file and PR it
 # code: bg
-# ver: 29
+# ver: 33
 # name: Български
 # base: bg
  (device behind)	 (устройството изостава)
@@ -147,6 +147,7 @@ Broker host / IP	Хост / IP на брокера
 Buffered receive (experimental)	Буфериран прием (експериментално)
 Built-in	Вграден
 Built-in (default)	Вграден (по подразбиране)
+Default	По подразбиране
 CR	CR
 Calibrate battery (full = 100%)	Калибрирай батерията (пълна = 100%)
 Calibrated: 100%% = %u.%02u V  (long-press to reset)	Калибрирано: 100%% = %u.%02u V  (задръжте за нулиране)
@@ -403,6 +404,7 @@ Image too large (>4 MB)	Изображението е твърде голямо 
 Import	Импортирай
 Import backup	Импортиране на резервно копие
 Import failed (bad/unreadable JSON)	Импортът неуспешен (невалиден JSON)
+Import failed: internal storage unavailable. Identity, channels and contacts were not saved.	Import failed: internal storage unavailable. Identity, channels and contacts were not saved.
 Import settings	Импорт на настройки
 Import this backup?\nReplaces identity,\nchannels & contacts,\nthen reboots.	Да внеса този архив?\nЗаменя самоличност,\nканали и контакти,\nпосле рестартира.
 Import: storage unavailable	Импорт: хранилището е недостъпно
@@ -442,7 +444,7 @@ Keyboard nav: WASDZ on	Клавиатурна навиг.: WASDZ вкл.
 Keyboard nav: off	Клавиатурна навиг.: изкл.
 Keyboard navigation	Навигация с клавиатура
 Keys	
-Known regions	Known regions
+Known regions	Известни региони
 LOS → %s	Пряка видимост → %s
 Landscape (desktop)	Пейзаж (десктоп)
 Landscape set - applies when remote mode starts.	Пейзажът е зададен - прилага се при стартиране на отдалечения режим.
@@ -563,9 +565,11 @@ No contact to trace	Няма контакт за проследяване
 No contacts have shared\na GPS location yet.	Все още няма контакти,\nсподелили GPS местоположение.
 No discovered nodes yet.\n\nAnything heard over the air that isn't in your contacts will show up here. When auto-add is off, you can manually add nodes to your contacts.	Все още няма открити възли.\n\nВсичко чуто в ефира, което не е в контактите ви, ще се появи тук. Когато авто-добавянето е изключено, можете да добавяте възли ръчно.
 No earlier versions yet	Все още няма по-ранни версии
+No internal storage: identity, channels and contacts can't be saved.	No internal storage: identity, channels and contacts can't be saved.
 No local expansion data	Няма локални данни за разширение
 No location for this contact	Няма местоположение за този контакт
 No map storage.\n\nInsert an SD card to cache\nWi-Fi tiles (or reflash to\nrestore the tiles partition).	Няма хранилище за карта.\n\nПоставете SD карта за кеш на\nWi-Fi плочки (или префлашнете за\nдяла tiles).
+No map storage on this board.\n\nIt has no tiles partition and\nno microSD the map can use.	No map storage on this board.\n\nIt has no tiles partition and\nno microSD the map can use.
 No map tiles here.\n\nConnect to Wi-Fi (Settings → Wi-Fi)\nto download this area.	Тук няма плочки на картата.\n\nСвържете се с Wi-Fi (Настройки → Wi-Fi),\nза да изтеглите този район.
 No mapped repeaters in this route	Няма картографирани ретранслатори по този маршрут
 No networks found (2.4 GHz only)	Няма намерени мрежи (само 2.4 GHz)
@@ -974,7 +978,7 @@ Your own apps	Твоите приложения
 Zero-hop	Без препредаване
 Zero-hop advert sent	Zero-hop advert изпратен
 Zoom: +/- buttons	Мащаб: бутони +/-
-ambiguous (several regions matched)	ambiguous (several regions matched)
+ambiguous (several regions matched)	нееднозначно (съвпадат няколко региона)
 client connected	клиент свързан
 command	команда
 contacts (%d):	контакти (%d):
@@ -1019,9 +1023,9 @@ tap to exit full screen	докоснете за изход от цял екра�
 zoom	мащаб
 zoom %d	мащаб %d
 ~17 dB amp for quiet/remote areas; turn off in noisy spots.	усилвател ~17 dB за тихи/отдалечени места; изключи в шумни.
-Scope	
-another region	
-my region	
+Scope	Обхват
+another region	друг регион
+my region	моят регион
 Save FAIL x%u	
 Save migrating	
 Saved %s	
@@ -1149,7 +1153,8 @@ Signal	Signal
 Signal (stale)	Signal (stale)
 nothing heard yet	nothing heard yet
 Detecting the keyboard protocol	Detecting the keyboard protocol
-Older keyboard protocol	Older keyboard protocol
+Older keyboard protocol	Стар протокол на клавиатурата
+Device	Устройство
 Using the older keyboard protocol	Using the older keyboard protocol
 turn on if your keyboard types the wrong letters; disables modifier latching	turn on if your keyboard types the wrong letters; disables modifier latching
 Formatted OK - card did not remount, reinsert it	Formatted OK - card did not remount, reinsert it
@@ -1220,9 +1225,9 @@ Disc.	Disc.
 Do Not Disturb is on	Do Not Disturb is on
 Esc always goes back. If your keyboard's Esc key types a character instead, tap the button, then press that key. Press Esc to undo.	Esc always goes back. If your keyboard's Esc key types a character instead, tap the button, then press that key. Press Esc to undo.
 Exact position to those contacts	Exact position to those contacts
-Forget	Forget
+Forget	Забрави
 Forget keyboard	Forget keyboard
-Forget this keyboard? You will need to pair it again.	Forget this keyboard? You will need to pair it again.
+Forget this keyboard? You will need to pair it again.	Да се забрави ли тази клавиатура? Ще трябва да я сдвоите отново.
 Keyboard connected	Keyboard connected
 Keyboard forgotten	Keyboard forgotten
 Keyboard layout	Keyboard layout
@@ -1314,19 +1319,19 @@ and %d more	and %d more
 %lu packets heard	%lu packets heard
 1 node heard today	1 node heard today
 1 packet heard	1 packet heard
-1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:
-3. Click Connect and choose this device.	3. Click Connect and choose this device.
+1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Свържете това устройство към компютъра с USB кабел.\n2. Отворете този адрес в Chrome или Edge:
+3. Click Connect and choose this device.	3. Натиснете „Свързване“ и изберете това устройство.
 4 numbers or letters	4 numbers or letters
-A day	A day
-A week	A week
+A day	Един ден
+A week	Една седмица
 Add a channel	Добави канал
-Add, download or delete files on this device from a computer.	Add, download or delete files on this device from a computer.
+Add, download or delete files on this device from a computer.	Добавяйте, изтегляйте или изтривайте файлове на това устройство от компютър.
 Advertise	Advertise
 Always on when connected to power	Always on when connected to power
-Anything worth saying (optional)	Anything worth saying (optional)
+Anything worth saying (optional)	Нещо друго за казване (по избор)
 App drawer	App drawer
 App icons	App icons
-Append timestamp	Append timestamp
+Append timestamp	Добавяне на времеви печат
 Apr	Apr
 April	April
 Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.	Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.
@@ -1344,21 +1349,21 @@ Clock not set	Clock not set
 Cmdr	Cmdr
 Commander	Commander
 Companion	Companion
-Connected to the computer	Connected to the computer
-Could not send the report. Try again later.	Could not send the report. Try again later.
-Count this device	Count this device
+Connected to the computer	Свързано с компютъра
+Could not send the report. Try again later.	Отчетът не можа да бъде изпратен. Опитайте по-късно.
+Count this device	Отчитане на това устройство
 Current PIN	Current PIN
 Cursor	Cursor
 Dec	Dec
 December	December
 Delete this conversation?	Delete this conversation?
-Device id	Device id
+Device id	ID на устройството
 Direct	Direct
 Direct message	Direct message
 Direct, no repeaters	Direct, no repeaters
 Discover	Discover
-Double-tap SPACE while typing to switch	Double-tap SPACE while typing to switch
-Emoji	Emoji
+Double-tap SPACE while typing to switch	Докоснете два пъти ИНТЕРВАЛ при писане за превключване
+Emoji	Емоджи
 Enter PIN	Enter PIN
 Enter it again	Enter it again
 Export Backup	Export Backup
@@ -1366,35 +1371,35 @@ Feb	Feb
 February	February
 Fri	Fri
 Friday	Friday
-Has a problem	Has a problem
+Has a problem	Има проблем
 Heard by %u repeaters	Heard by %u repeaters
 Heard by 1 repeater	Heard by 1 repeater
 Hold the trackball to switch	Hold the trackball to switch
 Home button opens	Home button opens
-I hit a problem	I hit a problem
+I hit a problem	Имах проблем
 I understand	I understand
 If you forget your PIN, you have to reset the device	If you forget your PIN, you have to reset the device
-Internal	Internal
+Internal	Вътрешна
 It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.	It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.
 Jan	Jan
 January	January
-Join # channel	Join # channel
-Join Public channel	Join Public channel
+Join # channel	Присъедини се към # канал
+Join Public channel	Присъедини се към публичния канал
 Jul	Jul
 July	July
 Jun	Jun
 June	June
-Keyboard and input	Keyboard and input
-Keyboard attached.\nRestarting in landscape in %d s.	Keyboard attached.\nRestarting in landscape in %d s.
+Keyboard and input	Клавиатура и въвеждане
+Keyboard attached.\nRestarting in landscape in %d s.	Клавиатурата е свързана.\nРестарт в хоризонтален режим след %d с.
 Large	Large
 Launcher	Launcher
 Launcher layout	Launcher layout
-Locks when screen off\n(hold the BOOT button to unlock)	Locks when screen off\n(hold the BOOT button to unlock)
-Map and GPS	Map and GPS
-Map tiles	Map tiles
+Locks when screen off\n(hold the BOOT button to unlock)	Заключва се при изключен екран\n(задръжте бутона BOOT за отключване)
+Map and GPS	Карта и GPS
+Map tiles	Плочки на картата
 Mar	Mar
 March	March
-Mark all as read	Mark all as read
+Mark all as read	Маркирай всички като прочетени
 May	May
 Mentions	Mentions
 Mentions muted	Mentions muted
@@ -1404,18 +1409,18 @@ Message %s	Message %s
 Message text on lock screen	Message text on lock screen
 Messages muted	Messages muted
 Messages unmuted	Messages unmuted
-Minutes	Minutes
+Minutes	Минути
 Mon	Mon
 Monday	Monday
 Mute mentions	Mute mentions
 Mute messages	Mute messages
 Navigate	Navigate
-Never	Never
+Never	Никога
 New PIN	New PIN
-No backups available to restore.	No backups available to restore.
+No backups available to restore.	Няма резервни копия за възстановяване.
 No backups yet. Use Export Backup above to create one.	No backups yet. Use Export Backup above to create one.
-No channels yet	No channels yet
-No direct chats yet	No direct chats yet
+No channels yet	Все още няма канали
+No direct chats yet	Все още няма лични чатове
 Normal\nLarge text\nHuge text	Normal\nLarge text\nHuge text
 Not delivered, tap to resend	Not delivered, tap to resend
 Nov	Nov
@@ -1428,56 +1433,56 @@ PIN changed	PIN changed
 PIN lock	PIN lock
 PIN lock off	PIN lock off
 PIN lock on	PIN lock on
-Phone-app link	Phone-app link
+Phone-app link	Връзка с приложението на телефона
 Pick the numbers, or type the PIN	Pick the numbers, or type the PIN
 Preview screensaver	Preview screensaver
-Radio and messaging	Radio and messaging
-Reboot Now	Reboot Now
-Received %s	Received %s
-Receiving %s	Receiving %s
-Region not saved: use a-z, 0-9 and -	Region not saved: use a-z, 0-9 and -
+Radio and messaging	Радио и съобщения
+Reboot Now	Рестартирай сега
+Received %s	%s е получен
+Receiving %s	Получаване на %s
+Region not saved: use a-z, 0-9 and -	Регионът не е запазен: използвайте a-z, 0-9 и -
 Remote	Remote
 Repeater	Repeater
-Report a bug	Report a bug
+Report a bug	Докладване на грешка
 Reset chat icon	Reset chat icon
 Room	Room
 Routed	Routed
-Running it for	Running it for
-Running it for:	Running it for:
-SD card	SD card
-SD unavailable - insert a FAT32 card and retry	SD unavailable - insert a FAT32 card and retry
+Running it for	Използвам го от
+Running it for:	Използвам го от:
+SD card	SD карта
+SD unavailable - insert a FAT32 card and retry	SD не е налична - поставете FAT32 карта и опитайте пак
 Sat	Sat
 Saturday	Saturday
-Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.
-Screen timeout	Screen timeout
+Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Кажете дали тази версия работи на вашата платка, за да се пуска стабилна версия по доказателства, а не защото никой не се е оплакал. Докладът за грешка се отваря като QR код: сканирайте го и го подайте от телефона си със своя акаунт в GitHub.
+Screen timeout	Изключване на екрана
 Screensaver	Screensaver
 Scroll	Scroll
 Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.	Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.
-Send	Send
-Send a test report	Send a test report
-Send another test report	Send another test report
-Sending %s	Sending %s
-Sending your report...	Sending your report...
+Send	Изпрати
+Send a test report	Изпращане на тестов отчет
+Send another test report	Изпращане на още един тестов отчет
+Sending %s	Изпращане на %s
+Sending your report...	Отчетът се изпраща…
 Sensor	Sensor
 Sep	Sep
 September	September
 Share my contact	Сподели моя контакт
 Spectrum	Spectrum
-Stop USB Files	Stop USB Files
-Storage and SD	Storage and SD
+Stop USB Files	Спиране на USB файлове
+Storage and SD	Хранилище и SD
 Sun	Sun
 Sunday	Sunday
-Tap the EN key on the keyboard to switch	Tap the EN key on the keyboard to switch
-Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.
+Tap the EN key on the keyboard to switch	Докоснете клавиша EN на клавиатурата за превключване
+Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Съобщава на тестовата матрица колко устройства използват тази версия, за да се различи платка без отчети от платка, която никой няма. Изпраща само платката и версията, нищо друго.
 Terminal	Terminal
-Test report: %s	Test report: %s
-Thank you. Your report is on wadamesh.com/beta	Thank you. Your report is on wadamesh.com/beta
+Test report: %s	Тестов отчет: %s
+Thank you. Your report is on wadamesh.com/beta	Благодарим. Отчетът ви е на wadamesh.com/beta
 The PINs did not match	The PINs did not match
 The mesh around you instead of a dark screen. Every ring is a real packet.	The mesh around you instead of a dark screen. Every ring is a real packet.
-This is everything that leaves the device. No name, no contacts, no position.	This is everything that leaves the device. No name, no contacts, no position.
+This is everything that leaves the device. No name, no contacts, no position.	Това е всичко, което напуска устройството. Без име, без контакти, без местоположение.
 Thu	Thu
 Thursday	Thursday
-Tick only what you actually used:	Tick only what you actually used:
+Tick only what you actually used:	Отбележете само това, което наистина сте използвали:
 Too many chat icons	Too many chat icons
 Too many tries. Wait %u s	Too many tries. Wait %u s
 Trackball	Trackball
@@ -1485,30 +1490,30 @@ Trackball: scroll	Trackball: scroll
 Transfer	Transfer
 Tue	Tue
 Tuesday	Tuesday
-Turn Wi-Fi on to send a report	Turn Wi-Fi on to send a report
+Turn Wi-Fi on to send a report	Включете Wi-Fi, за да изпратите отчет
 Type 4 numbers or letters	Type 4 numbers or letters
-USB Files	USB Files
-USB Files: low memory	USB Files: low memory
+USB Files	USB файлове
+USB Files: low memory	USB файлове: малко памет
 Unmute mentions	Unmute mentions
 Unmute messages	Unmute messages
-Upload of %s stopped	Upload of %s stopped
-Used	Used
+Upload of %s stopped	Качването на %s е спряно
+Used	Използвано
 VNC	VNC
-Waiting for the computer	Waiting for the computer
+Waiting for the computer	Изчакване на компютъра
 Web	Уеб
 Wed	Wed
 Wednesday	Wednesday
-While this screen is open, the companion app cannot use USB.	While this screen is open, the companion app cannot use USB.
-Works	Works
+While this screen is open, the companion app cannot use USB.	Докато този екран е отворен, придружаващото приложение не може да използва USB.
+Works	Работи
 Wrong PIN	Wrong PIN
 You:	You:
-a week or more	a week or more
-about a day	about a day
+a week or more	седмица или повече
+about a day	около ден
 heard %s ago	heard %s ago
-hold the BOOT button to unlock	hold the BOOT button to unlock
+hold the BOOT button to unlock	задръжте бутона BOOT за отключване
 hop away	hop away
 hops away	hops away
-minutes	minutes
+minutes	минути
 new	new
 node	node
 nodes	nodes
@@ -1579,14 +1584,13 @@ Community preset	Готова настройка на общността
 Connected to %s	Connected to %s
 Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.	Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.
 Custom UTC offset	Custom UTC offset
-Device	Device
 Direct messages	Direct messages
 Double-tap SPACE to cycle through English and the layouts you turn on.	Double-tap SPACE to cycle through English and the layouts you turn on.
 Encryption	Encryption
 Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.	Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.
 Experimental. Throttles the processor while the device sits idle.	Experimental. Throttles the processor while the device sits idle.
 Export	Export
-Export backup	Export backup
+Export backup	Експорт на резервно копие
 Firmware	Firmware
 Firmware %s\nDevelopment build: the update check is off.	Firmware %s\nDevelopment build: the update check is off.
 Flashes on a new message and breathes while any are unread.	Flashes on a new message and breathes while any are unread.
@@ -1595,13 +1599,13 @@ Frequency (MHz)	Frequency (MHz)
 From	From
 Hold the key to copy it.	Hold the key to copy it.
 Huge	Huge
-Huge text	Huge text
+Huge text	Много голям текст
 Joins a saved network briefly at boot just to set the clock.	Joins a saved network briefly at boot just to set the clock.
 Jumbo	Jumbo
 Keep per chat	Keep per chat
 Keeps your node's name off the status bar.	Keeps your node's name off the status bar.
 Keyboard layouts	Keyboard layouts
-Large text	Large text
+Large text	Голям текст
 Layout	Layout
 Letters move the highlight when no text field is focused; they still type in text fields.	Letters move the highlight when no text field is focused; they still type in text fields.
 Lights the keyboard and wakes the screen when a message arrives.	Lights the keyboard and wakes the screen when a message arrives.
@@ -1628,7 +1632,7 @@ Navigation	Navigation
 Navigation bar	Navigation bar
 New messages	New messages
 No GPS module on this device. You can still set your advert position by hand in Profile.	No GPS module on this device. You can still set your advert position by hand in Profile.
-No backups yet. Use Export backup above to create one.	No backups yet. Use Export backup above to create one.
+No backups yet. Use Export backup above to create one.	Още няма резервни копия. Създайте с „Експорт на резервно копие“ по-горе.
 No limit	No limit
 No messages yet.\nSay hello!	No messages yet.\nSay hello!
 No network chosen yet.	No network chosen yet.
@@ -1690,14 +1694,13 @@ Text console	Text console
 Text size	Text size
 Text size saved, restarting to apply it…	Text size saved, restarting to apply it…
 The MQTT bridge is not in this build.	The MQTT bridge is not in this build.
-The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.	The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.
 The arrows and Enter always work. These letters are extra: tap a row, then press a key.	The arrows and Enter always work. These letters are extra: tap a row, then press a key.
 The tab keys, over the navigation bar's icons.	The tab keys, over the navigation bar's icons.
 The touchscreen ignores taps until you unlock.	The touchscreen ignores taps until you unlock.
 This device has no speaker.	This device has no speaker.
 Time on air	Time on air
 Top	Top
-Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Turn on if your keyboard types the wrong letters. It turns off modifier latching.
+Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Включете, ако клавиатурата пише грешни букви. Изключва задържането на модификатори.
 Turn on only if your repeater re-floods just one region. Otherwise it can block logins and direct messages across regions.	Активирайте само ако вашият ретранслатор презалива само един регион. Иначе оставете изкл. — може да блокира вход/ЛС между региони.
 Typing	Typing
 Unreleased test firmware: newer features, less tested. The update check and Install update both follow it.	Получаване на неиздаден тестов firmware — по-нови функции, но по-малко тествани. Проверката и инсталирането следват бета канала.
@@ -2183,3 +2186,255 @@ Powering off… press reset to wake	Изключване… натиснете r
 Low	Low
 F11 on the keyboard steps through these too.	Клавишът F11 на клавиатурата също превключва тези нива.
 Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.	Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.
+Auto	Авто
+Auto tries the common speeds until the GPS answers and keeps the one that works. Pick a speed only if Auto does not find it. Applies after a restart.	Auto tries the common speeds until the GPS answers and keeps the one that works. Pick a speed only if Auto does not find it. Applies after a restart.
+Rooms	Rooms
+Auto-delete: on	Автоизтриване: вкл.
+Auto-delete: off	Автоизтриване: изкл.
+Contact Management	Управление на контакти
+Delete after %d days	Изтриване след %d дни
+Removed %d old contact(s)	Премахнати стари контакти: %d
+Pulse	Импулс
+Gentle	Нежен
+Long	Дълъг
+Heartbeat	Сърдечен ритъм
+Keep north up	Keep north up
+The mesh stays put instead of slowly turning around you.	The mesh stays put instead of slowly turning around you.
+Map file	Map file
+Folder tiles only	Folder tiles only
+rename the file to the folder name	rename the file to the folder name
+not a PNG raster archive	not a PNG raster archive
+file incomplete, copy it again	file incomplete, copy it again
+not a PMTiles v3 file	not a PMTiles v3 file
+No map files found. Copy a PNG archive to\n/maps/<name>/<name>.pmtiles	No map files found. Copy a PNG archive to\n/maps/<name>/<name>.pmtiles
+Zoom: map levels only	Zoom: map levels only
+No map levels found on the SD card	No map levels found on the SD card
+%d mA · %u:%02u left	%d mA · %u:%02u left
+%d mA · %u:%02u to full	%d mA · %u:%02u to full
+%d.%d °C · %u cycles · health %u%%	%d.%d °C · %u cycles · health %u%%
+%u / %u mAh · %s left	%u / %u mAh · %s left
+%u / %u mAh · %s left at your usage	%u / %u mAh · %s left at your usage
+%u / %u mAh · full in %s	%u / %u mAh · full in %s
+@ mention	@ mention
+A click for each keypress and each turn of the knob.	A click for each keypress and each turn of the knob.
+Apply to the fuel gauge	Apply to the fuel gauge
+Back to 1500 mAh	Back to 1500 mAh
+Back to safe defaults	Back to safe defaults
+Battery at %d%%: charge soon	Battery at %d%%: charge soon
+Battery care	Battery care
+Battery care: kept at 80%, running from USB	Battery care: kept at 80%, running from USB
+Battery empty: switching off in 10 s to protect it. Plug in to cancel.	Battery empty: switching off in 10 s to protect it. Plug in to cancel.
+Battery low: %d%%	Battery low: %d%%
+Battery pack	Battery pack
+Battery temperature OK, charging again	Battery temperature OK, charging again
+Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.	Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.
+Capacity (mAh)	Capacity (mAh)
+Charge current	Charge current
+Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.	Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.
+Charge limits	Charge limits
+Charge only to 80%	Charge only to 80%
+Charge to	Charge to
+Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.	Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.
+Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.	Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.
+Charging %d mA · %d mW	Charging %d mA · %d mW
+Charging back to the safe defaults	Charging back to the safe defaults
+Charging paused: battery too cold	Charging paused: battery too cold
+Charging paused: battery too cold (%d °C)	Charging paused: battery too cold (%d °C)
+Charging paused: battery too hot	Charging paused: battery too hot
+Charging paused: battery too hot (%d °C)	Charging paused: battery too hot (%d °C)
+Charging paused: too cold	Charging paused: too cold
+Charging paused: too hot	Charging paused: too hot
+Charging: switch-off cancelled	Charging: switch-off cancelled
+Drawing %d mA · %d mW	Drawing %d mA · %d mW
+Faster charging heats and wears the battery.	Faster charging heats and wears the battery.
+Fuel gauge not answering	Fuel gauge not answering
+Fuel gauge set. It relearns the pack over the next charges.	Fuel gauge set. It relearns the pack over the next charges.
+It resumes 3 °C below the limit.	It resumes 3 °C below the limit.
+Kept at 80% (battery care)	Kept at 80% (battery care)
+Key click	Key click
+Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Light	Light
+LilyGo fits 1500 mAh. Change it only for a different pack.	LilyGo fits 1500 mAh. Change it only for a different pack.
+Low battery warning	Low battery warning
+Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.
+Never below freezing. It resumes 3 °C above the limit.	Never below freezing. It resumes 3 °C above the limit.
+Once	Once
+Powering off… hold the power key to switch on	Powering off… hold the power key to switch on
+Quiet when face down	Quiet when face down
+Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.	Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.
+Starting the motion sensor…	Starting the motion sensor…
+Stop charging above	Stop charging above
+Stop charging below	Stop charging below
+Stopping lower gives a little less capacity and a longer battery life.	Stopping lower gives a little less capacity and a longer battery life.
+Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.	Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.
+Strength	Strength
+Strong	Strong
+Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.	Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.
+The defaults are the safe ones for this battery. Anything past them asks first.	The defaults are the safe ones for this battery. Anything past them asks first.
+The fuel gauge did not take the new capacity	The fuel gauge did not take the new capacity
+The fuel gauge is already set to this	The fuel gauge is already set to this
+The percentage comes from the battery's fuel gauge, which learns the pack by itself.	The percentage comes from the battery's fuel gauge, which learns the pack by itself.
+Twice	Twice
+Use anyway	Use anyway
+Used today %d mAh · yesterday %s	Used today %d mAh · yesterday %s
+Wake when picked up	Wake when picked up
+Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.	Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.
+last 5 min charging	last 5 min charging
+last 5 min drawing	last 5 min drawing
+not known	not known
+Picture dimming	Затъмняване на картината
+Wallpaper dimming	Затъмняване на тапета
+Darker with Night, lighter with Day, so the text on it stays readable.	По-тъмно с Нощ, по-светло с Ден, за да се чете текстът върху нея.
+Asking the time server	Asking the time server
+Auto-delete old contacts	Auto-delete old contacts
+Buzz for new messages, even with Sound off. Respects Do Not Disturb.	Buzz for new messages, even with Sound off. Respects Do Not Disturb.
+Connections	Connections
+Days	Days
+Deletes contacts not heard from in the number of days below. Favourites are never deleted.	Deletes contacts not heard from in the number of days below. Favourites are never deleted.
+Downloaded to this computer, and kept in this browser.	Downloaded to this computer, and kept in this browser.
+Import from this computer	Import from this computer
+In the browser, the connection is set in the page bar: Connect reaches your node over Bluetooth, USB or Wi-Fi.	In the browser, the connection is set in the page bar: Connect reaches your node over Bluetooth, USB or Wi-Fi.
+In the browser, the connection is set in the page bar: Connect reaches your node over Wi-Fi, USB or Bluetooth.	In the browser, the connection is set in the page bar: Connect reaches your node over Wi-Fi, USB or Bluetooth.
+No position yet. Allow this page to use your location when the browser asks.	No position yet. Allow this page to use your location when the browser asks.
+Not heard from for this many days, 1 to 999.	Not heard from for this many days, 1 to 999.
+Pattern	Pattern
+Plays once for a message, twice for a DM, three times for an @ mention. Tap one to feel it.	Plays once for a message, twice for a DM, three times for an @ mention. Tap one to feel it.
+Remove old contacts	Remove old contacts
+The map downloads through this computer's own network. Your node's Wi-Fi is set on the node.	The map downloads through this computer's own network. Your node's Wi-Fi is set on the node.
+Vibrate	Vibrate
+Vibration	Vibration
+Your node's own Bluetooth and pairing code are set on the node.	Your node's own Bluetooth and pairing code are set on the node.
+Accents and umlauts	Accents and umlauts
+Back (deletes while typing)	Back (deletes while typing)
+Back from a text field; unlock	Back from a text field; unlock
+Backspace	Backspace
+Caps Lock while typing	Caps Lock while typing
+Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.	Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.
+Edit in Settings > Quick replies	Edit in Settings > Quick replies
+Fn + Backspace	Fn + Backspace
+Fn + Enter	Fn + Enter
+Fn + Shift	Fn + Shift
+Fn + click	Fn + click
+Fn + turn	Fn + turn
+Hold Backspace	Hold Backspace
+Hold Enter	Hold Enter
+Hold Fn	Hold Fn
+Hold H / Hold S	Hold H / Hold S
+Hold Shift	Hold Shift
+Hold Space	Hold Space
+Hold a letter	Hold a letter
+Hold knob	Hold knob
+In a chat: jump to new messages	In a chat: jump to new messages
+Keys and shortcuts	Keys and shortcuts
+Keys and the knob do nothing until you hold Backspace.	Keys and the knob do nothing until you hold Backspace.
+Knob	Knob
+Launcher options / Control panel	Launcher options / Control panel
+Lock the screen	Lock the screen
+M  C  H  A  S	M  C  H  A  S
+More actions (like a long press)	More actions (like a long press)
+Move, click to select	Move, click to select
+Moving aurora stays still while Battery saver is on (Settings > Battery).	Moving aurora stays still while Battery saver is on (Settings > Battery).
+N	N
+Next tab, or scroll inside a screen	Next tab, or scroll inside a screen
+Pan the map; adjust a slider	Pan the map; adjust a slider
+Quiet now	Quiet now
+Quiet now (Do Not Disturb) on / off	Quiet now (Do Not Disturb) on / off
+Quiet now: off	Quiet now: off
+Quiet now: on (hold Shift again to end)	Quiet now: on (hold Shift again to end)
+Screen brightness	Screen brightness
+Shift + click	Shift + click
+Shift + click: brightness	Shift + click: brightness
+Shift + click: volume	Shift + click: volume
+Shift + turn	Shift + turn
+Special characters while typing	Special characters while typing
+Switch the knob to volume	Switch the knob to volume
+Tabs (Settings > Keyboard)	Tabs (Settings > Keyboard)
+This help	This help
+Turn the knob • click to insert	Turn the knob • click to insert
+Turn to scroll, click or any key to close.	Turn to scroll, click or any key to close.
+W A S D,  Q / E	W A S D,  Q / E
+Mute colours and animations	Mute colours and animations
+Mute colours and animations sets these for now.	Mute colours and animations sets these for now.
+Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.	Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.
+Slate	Slate
+Sepia	Sepia
+Grey	Grey
+Sage	Sage
+Dusk	Dusk
+Tone the whole screen	Tone the whole screen
+Off: only the accent takes the tone.	Off: only the accent takes the tone.
+%d book(s)	%d книг(и)
+A chapter is missing from this book	В тази книга липсва глава
+Apply the new look? The Pager restarts to apply it.	Да се приложи ли новият вид? Pager ще се рестартира.
+Back to book	Обратно към книгата
+Books	Книги
+Cannot open this book	Книгата не може да се отвори
+Cannot read this file	Файлът не може да се прочете
+Cannot show this image	Изображението не може да се покаже
+Chapters	Глави
+Continue reading	Продължи четенето
+Earlier chapters	По-ранни глави
+Ebook needs a newer firmware	Е-книгата изисква по-нов фърмуер
+End of book	Край на книгата
+External LoRa antenna	Външна LoRa антена
+Images	Изображения
+Later chapters	По-късни глави
+No books. Add .epub files to this app's folder.	Няма книги. Добави .epub файлове в папката на приложението.
+No data from the receiver	Няма данни от приемника
+No login reply, tracing instead…	Няма отговор за вход, проследявам…
+No readable chapters	Няма четими глави
+Not an epub	Не е epub
+Opening...	Отваряне...
+Receiver is talking at	Приемникът говори на
+Section	Раздел
+Start of book	Начало на книгата
+The book index is too large	Индексът на книгата е твърде голям
+This book is compressed. Repack it with scripts/ebook-prep.py	Книгата е компресирана. Препакетирай я със scripts/ebook-prep.py
+Use external	Използвай външна
+Use the external antenna?\nOnly with an antenna fitted: transmitting into an empty socket can destroy the radio.	Да се използва ли външната антена?\nСамо с поставена антена: предаването в празно гнездо може да повреди радиото.
+Uses the external socket instead of the on-board antenna. Only with an antenna fitted.	Използва външното гнездо вместо вградената антена. Само с поставена антена.
+View image	Виж изображението
+image	изображение
+reacted	реагира
+reacted to	реагира на
+Hide MediaMesh and TAK texts	Скрий текстовете MediaMesh и TAK
+Apps like MeshCore Open TAK send photos, voice and team tracking as text. Messages between apps are dropped, and the rest become a short label such as Photo. A connected phone app still gets everything.	Приложения като MeshCore Open TAK изпращат снимки, глас и проследяване на екипа като текст. Съобщенията между приложения се пропускат, а останалите стават кратък етикет, например Снимка. Свързано приложение на телефон продължава да получава всичко.
+MediaMesh and TAK texts will be hidden	Текстовете MediaMesh и TAK ще бъдат скрити
+MediaMesh and TAK texts will be shown	Текстовете MediaMesh и TAK ще се показват
+Photo	Снимка
+Voice message	Гласово съобщение
+Push-to-talk	Натисни и говори
+Encrypted message	Шифровано съобщение
+30 sec	30 сек
+Peak -- dBm	Пик -- dBm
+Peak %d dBm @ %.1f MHz	Пик %d dBm @ %.1f MHz
+peak %d @ %.1f	пик %d @ %.1f
+Asleep: tap screen or 🤍 to wake	Заспал: докосни екрана или 🤍 за събуждане
+Receiving %s\n%lu / %lu bytes	Получаване на %s\n%lu / %lu байта
+Sending %s\n%lu / %lu bytes	Изпращане на %s\n%lu / %lu байта
+File Transfer	Прехвърляне на файлове
+U	Н
+Unread only	Само непрочетени
+No unread chats	Няма непрочетени чатове
+No unread channels	Няма непрочетени канали
+No unread direct chats	Няма непрочетени лични чатове
+Recent	Скорошни
+Smileys	Емотикони
+People	Хора
+Nature	Природа
+Food	Храна
+Activity	Занимания
+Travel	Пътуване
+Objects	Предмети
+Symbols	Символи
+Flags	Знамена
+Chars	Знаци
+Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.
+Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.	Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.
+\n%d%%, about %lu s left	\n%d%%, още около %lu s
+\n%d%%, about %lu min left	\n%d%%, още около %lu мин
+Keep this orientation?\nIf the screen does not answer your taps, leave it: it goes back to portrait in %d s.	Да се запази ли тази ориентация?\nАко екранът не реагира на докосване, оставете го: след %d s се връща в портретна.
+Back to portrait… restarting	Обратно към портретна… рестартиране
+Keep	Запази
+Orientation kept	Ориентацията е запазена

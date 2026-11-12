@@ -7,6 +7,7 @@
 #include <Utils.h>
 #include <helpers/TxtDataHelpers.h>
 #include "helpers/esp32/TouchPrefsStore.h"
+#include "helpers/UiRequestSlot.h"
 #include <ArduinoJson.h>
 #include <math.h>
 
@@ -149,6 +150,12 @@ void MyMesh::begin(MeshBackend* backend) {
 
 void MyMesh::loop() {
   const uint32_t now = millis();
+  // src/MyMesh.h uiRequestTick: a request nobody answered frees the slot after 45 s.
+  if (_ui_pending_kind != UiReqKind::None && UiRequestSlot::expired(now, _ui_pending_at)) {
+    Serial.printf("[web] UI request slot (kind %u) unanswered for %u ms: freed\n",
+                  (unsigned)_ui_pending_kind, (unsigned)(now - _ui_pending_at));
+    cancelUIPingPending();
+  }
   if (_backend) _backend->loop(now);
   if (now - _pos_sync_ms >= 5000) { _pos_sync_ms = now; syncAdvertPosition(now); }
 }
@@ -509,10 +516,11 @@ static int hexToBytes(const char* hx, uint8_t* out, int max_bytes) {
 // the companion protocol. The demo replays its own cast and channels at every start, so
 // there an import keeps the name, settings and app preferences.
 bool MyMesh::uiImportBackup(Stream& in, uint8_t sections, bool replace_channels, bool replace_contacts,
-                            int* out_channels, int* out_contacts) {
+                            int* out_channels, int* out_contacts, bool* out_saved) {
   (void)replace_channels;
   if (out_channels) *out_channels = 0;
   if (out_contacts) *out_contacts = 0;
+  if (out_saved) *out_saved = true;
   JsonDocument doc;
   if (deserializeJson(doc, in)) return false;
   JsonObjectConst root = doc.as<JsonObjectConst>();
@@ -580,7 +588,7 @@ bool MyMesh::uiImportBackup(Stream& in, uint8_t sections, bool replace_channels,
       if (!ps["longitude"].isNull()) { sensors.node_lon = ps["longitude"].as<double>(); dirty = true; }
     }
   }
-  if (dirty) savePrefs();
+  if (dirty && !savePrefs() && out_saved) *out_saved = false;   // as src/MyMesh.cpp (#708)
   int nch = 0;
   if (sections & 0x08) {
     JsonArrayConst ch = root["channels"].as<JsonArrayConst>();
@@ -776,6 +784,7 @@ int MyMesh::uiSendRequestAfterGuestLogin(ContactInfo& recipient, UiReqKind kind)
   if (r == MSG_SEND_SENT_FLOOD || r == MSG_SEND_SENT_DIRECT) {
     _ui_pending_kind = kind;
     memcpy(_ui_pending_key, recipient.id.pub_key, PUB_KEY_SIZE);
+    _ui_pending_at = millis();
   }
   return r;
 }
@@ -787,6 +796,7 @@ int MyMesh::uiStraightRequest(ContactInfo& recipient, UiReqKind kind) {
   if (r == MSG_SEND_SENT_FLOOD || r == MSG_SEND_SENT_DIRECT) {
     _ui_pending_kind = kind;
     memcpy(_ui_pending_key, recipient.id.pub_key, PUB_KEY_SIZE);
+    _ui_pending_at = millis();
   }
   return r;
 }
@@ -798,6 +808,7 @@ int MyMesh::uiSendBinaryRequest(ContactInfo& recipient, const uint8_t* payload, 
   if (r == MSG_SEND_SENT_FLOOD || r == MSG_SEND_SENT_DIRECT) {
     _ui_pending_kind = UiReqKind::Binary;
     memcpy(_ui_pending_key, recipient.id.pub_key, PUB_KEY_SIZE);
+    _ui_pending_at = millis();
   }
   return r;
 }
@@ -821,6 +832,7 @@ int MyMesh::sendRegionsRequestForUI(const uint8_t pub_key[PUB_KEY_SIZE], uint32_
   if (r == MSG_SEND_SENT_FLOOD || r == MSG_SEND_SENT_DIRECT) {
     _ui_pending_kind = UiReqKind::Regions;
     memcpy(_ui_pending_key, pub_key, PUB_KEY_SIZE);
+    _ui_pending_at = millis();
   }
   return r;
 }
@@ -895,6 +907,7 @@ void MyMesh::beDirectMessage(const uint8_t pub_key[32], uint32_t sender_ts, cons
   if (flood) _n_recv_flood++; else _n_recv_direct++;
   beSignal(snr_q4, rssi);
   stashRxMeta(false, from->id.pub_key, flood ? path_len : 0xFF);
+  if (_ui->hidesIncomingText(text, false)) return;
   _ui->notify(UIEventType::contactMessage);
   _last_sender_ts = sender_ts;
   _ui->newMsgFromPubWithMeta(flood ? path_len : 0xFF, flood, from->id.pub_key, from->name, text,
@@ -910,6 +923,7 @@ void MyMesh::beChannelMessage(int channel_idx, uint32_t sender_ts, const char* t
   beSignal(snr_q4, rssi);
   stashRxMeta(true, (channel_idx >= 0 && channel_idx < MAX_GROUP_CHANNELS) ? _channels[channel_idx].channel.hash : nullptr,
               path_len);
+  if (_ui->hidesIncomingText(text, true)) return;
   _ui->notify(UIEventType::channelMessage);
   _last_sender_ts = sender_ts;
   _ui->newMsgFromPubWithMeta(path_len, true, nullptr, channel_name, text, ++_msgcount, snr_q4, rssi);
@@ -1037,6 +1051,14 @@ void MyMesh::beRxRaw(int8_t snr_q4, int8_t rssi, const uint8_t* raw, size_t len)
   r.len = (uint8_t)(len > 255 ? 255 : len);
   r.org_kind = org_kind;
   memcpy(r.org, org, 4);
+  r.path_hash_sz = v.hash_sz;
+  r.path_bytes = 0;
+  if (v.route == ROUTE_TYPE_FLOOD || v.route == ROUTE_TYPE_TRANSPORT_FLOOD) {
+    int n = (int)v.hops * (int)v.hash_sz;
+    if (n > UI_RXLOG_PATH_MAX) n = UI_RXLOG_PATH_MAX / v.hash_sz * v.hash_sz;
+    r.path_bytes = (uint8_t)n;
+    if (n) memcpy(r.path, &raw[v.path_off], n);
+  }
   _rxlog_head = (uint8_t)((_rxlog_head + 1) % UI_RXLOG_MAX);
   if (_rxlog_cnt < UI_RXLOG_MAX) _rxlog_cnt++;
 

@@ -1,7 +1,7 @@
 # wadamesh language file
 # canonical source - translators: edit this file and PR it
 # code: fr
-# ver: 29
+# ver: 33
 # name: Français
 # base: fr
  (device behind)	 (appareil en retard)
@@ -147,6 +147,7 @@ Broker host / IP	Hôte / IP du broker
 Buffered receive (experimental)	Réception tamponnée (expérimental)
 Built-in	Intégré
 Built-in (default)	Intégré (par défaut)
+Default	Par défaut
 CR	CR
 Calibrate battery (full = 100%)	Étalonner la batterie (plein = 100%)
 Calibrated: 100%% = %u.%02u V  (long-press to reset)	Étalonné : 100%% = %u.%02u V  (appui long pour réinitialiser)
@@ -403,6 +404,7 @@ Image too large (>4 MB)	Image trop grande (>4 Mo)
 Import	Importer
 Import backup	Importer la sauvegarde
 Import failed (bad/unreadable JSON)	Échec de l'import (JSON illisible)
+Import failed: internal storage unavailable. Identity, channels and contacts were not saved.	Échec de l'importation : stockage interne indisponible. L'identité, les canaux et les contacts n'ont pas été enregistrés.
 Import settings	Importer les réglages
 Import this backup?\nReplaces identity,\nchannels & contacts,\nthen reboots.	Importer cette sauvegarde ?\nRemplace l'identité,\nles canaux & contacts,\npuis redémarre.
 Import: storage unavailable	Import : stockage indisponible
@@ -442,7 +444,7 @@ Keyboard nav: WASDZ on	Nav. clavier : WASDZ activé
 Keyboard nav: off	Nav. clavier : désactivé
 Keyboard navigation	Navigation clavier
 Keys	
-Known regions	Known regions
+Known regions	Régions connues
 LOS → %s	Vue directe → %s
 Landscape (desktop)	Paysage (bureau)
 Landscape set - applies when remote mode starts.	Paysage défini - s'applique au démarrage du mode distant.
@@ -562,9 +564,11 @@ No contact to trace	Aucun contact à tracer
 No contacts have shared\na GPS location yet.	Aucun contact n'a encore\npartagé de position GPS.
 No discovered nodes yet.\n\nAnything heard over the air that isn't in your contacts will show up here. When auto-add is off, you can manually add nodes to your contacts.	Aucun nœud découvert pour l'instant.\n\nTout ce qui est entendu par radio et qui n'est pas dans vos contacts apparaît ici. Si l'ajout auto est désactivé, vous pouvez ajouter des nœuds manuellement.
 No earlier versions yet	Aucune version antérieure
+No internal storage: identity, channels and contacts can't be saved.	Pas de stockage interne : l'identité, les canaux et les contacts ne peuvent pas être enregistrés.
 No local expansion data	Aucune donnée d'extension locale
 No location for this contact	Aucune position pour ce contact
 No map storage.\n\nInsert an SD card to cache\nWi-Fi tiles (or reflash to\nrestore the tiles partition).	Pas de stockage carte.\n\nInsérez une carte SD pour les\ntuiles Wi-Fi (ou reflashez pour\nrestaurer la partition des tuiles).
+No map storage on this board.\n\nIt has no tiles partition and\nno microSD the map can use.	Pas de stockage de carte ici.\n\nCet appareil n'a ni partition de\ntuiles ni microSD pour la carte.
 No map tiles here.\n\nConnect to Wi-Fi (Settings → Wi-Fi)\nto download this area.	Aucune tuile ici.\n\nConnectez-vous au Wi-Fi (Réglages → Wi-Fi)\npour télécharger cette zone.
 No mapped repeaters in this route	Aucun répéteur cartographié sur cet itinéraire
 No networks found (2.4 GHz only)	Aucun réseau trouvé (2,4 GHz uniquement)
@@ -973,7 +977,7 @@ Your own apps	Vos propres applis
 Zero-hop	Zéro saut
 Zero-hop advert sent	Annonce zero-hop envoyée
 Zoom: +/- buttons	Zoom : boutons +/-
-ambiguous (several regions matched)	ambiguous (several regions matched)
+ambiguous (several regions matched)	ambigu (plusieurs régions correspondent)
 client connected	client connecté
 command	commande
 contacts (%d):	contacts (%d) :
@@ -1018,9 +1022,9 @@ tap to exit full screen	toucher pour quitter le plein écran
 zoom	zoom
 zoom %d	zoom %d
 ~17 dB amp for quiet/remote areas; turn off in noisy spots.	ampli ~17 dB pour zones calmes/isolées ; désactiver en zone bruyante.
-Scope	
-another region	
-my region	
+Scope	Portée
+another region	une autre région
+my region	ma région
 Save FAIL x%u	
 Save migrating	
 Saved %s	
@@ -1148,7 +1152,8 @@ Signal	Signal
 Signal (stale)	Signal (stale)
 nothing heard yet	nothing heard yet
 Detecting the keyboard protocol	Detecting the keyboard protocol
-Older keyboard protocol	Older keyboard protocol
+Older keyboard protocol	Ancien protocole clavier
+Device	Appareil
 Using the older keyboard protocol	Using the older keyboard protocol
 turn on if your keyboard types the wrong letters; disables modifier latching	turn on if your keyboard types the wrong letters; disables modifier latching
 Formatted OK - card did not remount, reinsert it	Formatted OK - card did not remount, reinsert it
@@ -1219,9 +1224,9 @@ Disc.	Disc.
 Do Not Disturb is on	Do Not Disturb is on
 Esc always goes back. If your keyboard's Esc key types a character instead, tap the button, then press that key. Press Esc to undo.	Esc always goes back. If your keyboard's Esc key types a character instead, tap the button, then press that key. Press Esc to undo.
 Exact position to those contacts	Exact position to those contacts
-Forget	Forget
+Forget	Oublier
 Forget keyboard	Forget keyboard
-Forget this keyboard? You will need to pair it again.	Forget this keyboard? You will need to pair it again.
+Forget this keyboard? You will need to pair it again.	Oublier ce clavier ? Il faudra l'appairer à nouveau.
 Keyboard connected	Keyboard connected
 Keyboard forgotten	Keyboard forgotten
 Keyboard layout	Keyboard layout
@@ -1313,19 +1318,19 @@ and %d more	and %d more
 %lu packets heard	%lu packets heard
 1 node heard today	1 node heard today
 1 packet heard	1 packet heard
-1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:
-3. Click Connect and choose this device.	3. Click Connect and choose this device.
+1. Connect this device to the computer with a USB cable.\n2. Open this address in Chrome or Edge:	1. Reliez cet appareil à l'ordinateur avec un câble USB.\n2. Ouvrez cette adresse dans Chrome ou Edge :
+3. Click Connect and choose this device.	3. Cliquez sur Connecter et choisissez cet appareil.
 4 numbers or letters	4 numbers or letters
-A day	A day
-A week	A week
+A day	Un jour
+A week	Une semaine
 Add a channel	Ajouter un canal
-Add, download or delete files on this device from a computer.	Add, download or delete files on this device from a computer.
+Add, download or delete files on this device from a computer.	Ajoutez, téléchargez ou supprimez des fichiers sur cet appareil depuis un ordinateur.
 Advertise	Advertise
 Always on when connected to power	Always on when connected to power
-Anything worth saying (optional)	Anything worth saying (optional)
+Anything worth saying (optional)	Autre chose à signaler (facultatif)
 App drawer	App drawer
 App icons	App icons
-Append timestamp	Append timestamp
+Append timestamp	Ajouter l'horodatage
 Apr	Apr
 April	April
 Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.	Asks for 4 numbers or letters to unlock, and locks whenever the screen goes off. If you forget it, the only way back in is to reset the device, which erases everything on it.
@@ -1343,20 +1348,20 @@ Clock not set	Clock not set
 Cmdr	Cmdr
 Commander	Commander
 Companion	Companion
-Connected to the computer	Connected to the computer
-Could not send the report. Try again later.	Could not send the report. Try again later.
-Count this device	Count this device
+Connected to the computer	Connecté à l'ordinateur
+Could not send the report. Try again later.	Impossible d'envoyer le rapport. Réessayez plus tard.
+Count this device	Compter cet appareil
 Current PIN	Current PIN
 Cursor	Cursor
 Dec	Dec
 December	December
 Delete this conversation?	Delete this conversation?
-Device id	Device id
+Device id	ID de l'appareil
 Direct	Direct
 Direct message	Direct message
 Direct, no repeaters	Direct, no repeaters
 Discover	Discover
-Double-tap SPACE while typing to switch	Double-tap SPACE while typing to switch
+Double-tap SPACE while typing to switch	Touchez deux fois ESPACE pendant la saisie pour basculer
 Emoji	Emoji
 Enter PIN	Enter PIN
 Enter it again	Enter it again
@@ -1365,35 +1370,35 @@ Feb	Feb
 February	February
 Fri	Fri
 Friday	Friday
-Has a problem	Has a problem
+Has a problem	A un problème
 Heard by %u repeaters	Heard by %u repeaters
 Heard by 1 repeater	Heard by 1 repeater
 Hold the trackball to switch	Hold the trackball to switch
 Home button opens	Home button opens
-I hit a problem	I hit a problem
+I hit a problem	J'ai eu un problème
 I understand	I understand
 If you forget your PIN, you have to reset the device	If you forget your PIN, you have to reset the device
-Internal	Internal
+Internal	Interne
 It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.	It is the only way back in, and it erases everything on it: contacts, channels, messages and settings. Nobody can unlock it for you.
 Jan	Jan
 January	January
-Join # channel	Join # channel
-Join Public channel	Join Public channel
+Join # channel	Rejoindre un canal #
+Join Public channel	Rejoindre le canal public
 Jul	Jul
 July	July
 Jun	Jun
 June	June
-Keyboard and input	Keyboard and input
-Keyboard attached.\nRestarting in landscape in %d s.	Keyboard attached.\nRestarting in landscape in %d s.
+Keyboard and input	Clavier et saisie
+Keyboard attached.\nRestarting in landscape in %d s.	Clavier branché.\nRedémarrage en paysage dans %d s.
 Large	Large
 Launcher	Launcher
 Launcher layout	Launcher layout
-Locks when screen off\n(hold the BOOT button to unlock)	Locks when screen off\n(hold the BOOT button to unlock)
-Map and GPS	Map and GPS
-Map tiles	Map tiles
+Locks when screen off\n(hold the BOOT button to unlock)	Se verrouille écran éteint\n(maintenez le bouton BOOT pour déverrouiller)
+Map and GPS	Carte et GPS
+Map tiles	Tuiles de carte
 Mar	Mar
 March	March
-Mark all as read	Mark all as read
+Mark all as read	Tout marquer comme lu
 May	May
 Mentions	Mentions
 Mentions muted	Mentions muted
@@ -1409,12 +1414,12 @@ Monday	Monday
 Mute mentions	Mute mentions
 Mute messages	Mute messages
 Navigate	Navigate
-Never	Never
+Never	Jamais
 New PIN	New PIN
-No backups available to restore.	No backups available to restore.
+No backups available to restore.	Aucune sauvegarde à restaurer.
 No backups yet. Use Export Backup above to create one.	No backups yet. Use Export Backup above to create one.
-No channels yet	No channels yet
-No direct chats yet	No direct chats yet
+No channels yet	Aucun canal pour l'instant
+No direct chats yet	Aucune discussion directe pour l'instant
 Normal\nLarge text\nHuge text	Normal\nLarge text\nHuge text
 Not delivered, tap to resend	Not delivered, tap to resend
 Nov	Nov
@@ -1427,56 +1432,56 @@ PIN changed	PIN changed
 PIN lock	PIN lock
 PIN lock off	PIN lock off
 PIN lock on	PIN lock on
-Phone-app link	Phone-app link
+Phone-app link	Lien avec l'app mobile
 Pick the numbers, or type the PIN	Pick the numbers, or type the PIN
 Preview screensaver	Preview screensaver
-Radio and messaging	Radio and messaging
-Reboot Now	Reboot Now
-Received %s	Received %s
-Receiving %s	Receiving %s
-Region not saved: use a-z, 0-9 and -	Region not saved: use a-z, 0-9 and -
+Radio and messaging	Radio et messagerie
+Reboot Now	Redémarrer maintenant
+Received %s	%s reçu
+Receiving %s	Réception de %s
+Region not saved: use a-z, 0-9 and -	Région non enregistrée : utilisez a-z, 0-9 et -
 Remote	Remote
 Repeater	Repeater
-Report a bug	Report a bug
+Report a bug	Signaler un bug
 Reset chat icon	Reset chat icon
 Room	Room
 Routed	Routed
-Running it for	Running it for
-Running it for:	Running it for:
-SD card	SD card
-SD unavailable - insert a FAT32 card and retry	SD unavailable - insert a FAT32 card and retry
+Running it for	Utilisé depuis
+Running it for:	Utilisé depuis :
+SD card	Carte SD
+SD unavailable - insert a FAT32 card and retry	SD indisponible - insérez une carte FAT32 et réessayez
 Sat	Sat
 Saturday	Saturday
-Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.
-Screen timeout	Screen timeout
+Say whether this build works on your board, so a stable release is promoted on evidence rather than on nobody having complained. A bug report opens as a QR: scan it and file it from your phone, under your own GitHub account.	Dites si cette version fonctionne sur votre carte, pour qu'une version stable soit publiée sur des preuves et non parce que personne ne s'est plaint. Un rapport de bug s'ouvre en QR code : scannez-le et déposez-le depuis votre téléphone, avec votre propre compte GitHub.
+Screen timeout	Mise en veille de l'écran
 Screensaver	Screensaver
 Scroll	Scroll
 Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.	Scroll moves the screen; Cursor points and clicks; Navigate (experimental) moves a selection. Hold the trackball to switch between Scroll and Cursor.
-Send	Send
-Send a test report	Send a test report
-Send another test report	Send another test report
-Sending %s	Sending %s
-Sending your report...	Sending your report...
+Send	Envoyer
+Send a test report	Envoyer un rapport de test
+Send another test report	Envoyer un autre rapport de test
+Sending %s	Envoi de %s
+Sending your report...	Envoi de votre rapport…
 Sensor	Sensor
 Sep	Sep
 September	September
 Share my contact	Partager mon contact
 Spectrum	Spectrum
-Stop USB Files	Stop USB Files
-Storage and SD	Storage and SD
+Stop USB Files	Arrêter Fichiers USB
+Storage and SD	Stockage et SD
 Sun	Sun
 Sunday	Sunday
-Tap the EN key on the keyboard to switch	Tap the EN key on the keyboard to switch
-Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.
+Tap the EN key on the keyboard to switch	Touchez la touche EN du clavier pour basculer
+Tells the matrix how many devices run this build, so a board with no reports can be told apart from a board nobody owns. Sends the board and the version, nothing else.	Indique à la matrice de test combien d'appareils utilisent cette version, pour distinguer une carte sans rapports d'une carte que personne ne possède. N'envoie que la carte et la version, rien d'autre.
 Terminal	Terminal
-Test report: %s	Test report: %s
-Thank you. Your report is on wadamesh.com/beta	Thank you. Your report is on wadamesh.com/beta
+Test report: %s	Rapport de test : %s
+Thank you. Your report is on wadamesh.com/beta	Merci. Votre rapport est sur wadamesh.com/beta
 The PINs did not match	The PINs did not match
 The mesh around you instead of a dark screen. Every ring is a real packet.	The mesh around you instead of a dark screen. Every ring is a real packet.
-This is everything that leaves the device. No name, no contacts, no position.	This is everything that leaves the device. No name, no contacts, no position.
+This is everything that leaves the device. No name, no contacts, no position.	Voici tout ce qui quitte l'appareil. Aucun nom, aucun contact, aucune position.
 Thu	Thu
 Thursday	Thursday
-Tick only what you actually used:	Tick only what you actually used:
+Tick only what you actually used:	Cochez uniquement ce que vous avez vraiment utilisé :
 Too many chat icons	Too many chat icons
 Too many tries. Wait %u s	Too many tries. Wait %u s
 Trackball	Trackball
@@ -1484,27 +1489,27 @@ Trackball: scroll	Trackball: scroll
 Transfer	Transfer
 Tue	Tue
 Tuesday	Tuesday
-Turn Wi-Fi on to send a report	Turn Wi-Fi on to send a report
+Turn Wi-Fi on to send a report	Activez le Wi-Fi pour envoyer un rapport
 Type 4 numbers or letters	Type 4 numbers or letters
-USB Files	USB Files
-USB Files: low memory	USB Files: low memory
+USB Files	Fichiers USB
+USB Files: low memory	Fichiers USB : mémoire insuffisante
 Unmute mentions	Unmute mentions
 Unmute messages	Unmute messages
-Upload of %s stopped	Upload of %s stopped
-Used	Used
+Upload of %s stopped	Envoi de %s interrompu
+Used	Utilisé
 VNC	VNC
-Waiting for the computer	Waiting for the computer
+Waiting for the computer	En attente de l'ordinateur
 Web	Web
 Wed	Wed
 Wednesday	Wednesday
-While this screen is open, the companion app cannot use USB.	While this screen is open, the companion app cannot use USB.
-Works	Works
+While this screen is open, the companion app cannot use USB.	Tant que cet écran est ouvert, l'app compagnon ne peut pas utiliser l'USB.
+Works	Fonctionne
 Wrong PIN	Wrong PIN
 You:	You:
-a week or more	a week or more
-about a day	about a day
+a week or more	une semaine ou plus
+about a day	environ un jour
 heard %s ago	heard %s ago
-hold the BOOT button to unlock	hold the BOOT button to unlock
+hold the BOOT button to unlock	maintenez le bouton BOOT pour déverrouiller
 hop away	hop away
 hops away	hops away
 minutes	minutes
@@ -1578,14 +1583,13 @@ Community preset	Préréglage communautaire
 Connected to %s	Connected to %s
 Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.	Contacts are on internal flash: the SD card did not mount at boot. Re-seat the card and restart.
 Custom UTC offset	Custom UTC offset
-Device	Device
 Direct messages	Direct messages
 Double-tap SPACE to cycle through English and the layouts you turn on.	Double-tap SPACE to cycle through English and the layouts you turn on.
 Encryption	Encryption
 Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.	Experimental. Boots into a text console with no graphical interface: type commands, read replies. Type 'ui' there to come back; if it ever fails to start, the device returns here on its own. Turning it on or off restarts.
 Experimental. Throttles the processor while the device sits idle.	Experimental. Throttles the processor while the device sits idle.
 Export	Export
-Export backup	Export backup
+Export backup	Exporter une sauvegarde
 Firmware	Firmware
 Firmware %s\nDevelopment build: the update check is off.	Firmware %s\nDevelopment build: the update check is off.
 Flashes on a new message and breathes while any are unread.	Flashes on a new message and breathes while any are unread.
@@ -1594,13 +1598,13 @@ Frequency (MHz)	Frequency (MHz)
 From	From
 Hold the key to copy it.	Hold the key to copy it.
 Huge	Huge
-Huge text	Huge text
+Huge text	Très grand texte
 Joins a saved network briefly at boot just to set the clock.	Joins a saved network briefly at boot just to set the clock.
 Jumbo	Jumbo
 Keep per chat	Keep per chat
 Keeps your node's name off the status bar.	Keeps your node's name off the status bar.
 Keyboard layouts	Keyboard layouts
-Large text	Large text
+Large text	Grand texte
 Layout	Layout
 Letters move the highlight when no text field is focused; they still type in text fields.	Letters move the highlight when no text field is focused; they still type in text fields.
 Lights the keyboard and wakes the screen when a message arrives.	Lights the keyboard and wakes the screen when a message arrives.
@@ -1627,7 +1631,7 @@ Navigation	Navigation
 Navigation bar	Navigation bar
 New messages	New messages
 No GPS module on this device. You can still set your advert position by hand in Profile.	No GPS module on this device. You can still set your advert position by hand in Profile.
-No backups yet. Use Export backup above to create one.	No backups yet. Use Export backup above to create one.
+No backups yet. Use Export backup above to create one.	Aucune sauvegarde. Utilisez « Exporter une sauvegarde » ci-dessus pour en créer une.
 No limit	No limit
 No messages yet.\nSay hello!	No messages yet.\nSay hello!
 No network chosen yet.	No network chosen yet.
@@ -1689,14 +1693,13 @@ Text console	Text console
 Text size	Text size
 Text size saved, restarting to apply it…	Text size saved, restarting to apply it…
 The MQTT bridge is not in this build.	The MQTT bridge is not in this build.
-The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.	The T-Deck Plus uses 38400, the T-Deck 1.0 9600. Applies after a restart.
 The arrows and Enter always work. These letters are extra: tap a row, then press a key.	The arrows and Enter always work. These letters are extra: tap a row, then press a key.
 The tab keys, over the navigation bar's icons.	The tab keys, over the navigation bar's icons.
 The touchscreen ignores taps until you unlock.	The touchscreen ignores taps until you unlock.
 This device has no speaker.	This device has no speaker.
 Time on air	Time on air
 Top	Top
-Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Turn on if your keyboard types the wrong letters. It turns off modifier latching.
+Turn on if your keyboard types the wrong letters. It turns off modifier latching.	Activez-le si le clavier tape les mauvaises lettres. Désactive le verrouillage des touches de modification.
 Turn on only if your repeater re-floods just one region. Otherwise it can block logins and direct messages across regions.	Activez seulement si votre répéteur ne réinonde qu'une région. Sinon laissez désactivé — cela peut bloquer les connexions/DM inter-régions.
 Typing	Typing
 Unreleased test firmware: newer features, less tested. The update check and Install update both follow it.	Recevoir un firmware de test non publié — fonctions plus récentes, mais moins testées. La vérification et l'installation suivent le canal bêta.
@@ -2182,3 +2185,255 @@ Powering off… press reset to wake	Extinction… appuyez sur reset pour réveil
 Low	Low
 F11 on the keyboard steps through these too.	F11 sur le clavier parcourt aussi ces niveaux.
 Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.	Wi-Fi was switched off because the device crashed while it was on. Turn it on in Settings > Wi-Fi to try again.
+Auto	Auto
+Auto tries the common speeds until the GPS answers and keeps the one that works. Pick a speed only if Auto does not find it. Applies after a restart.	Auto essaie les vitesses courantes jusqu'à ce que le GPS réponde et garde celle qui fonctionne. Choisir une vitesse seulement si Auto n'en trouve pas. S'applique après un redémarrage.
+Rooms	Rooms
+Auto-delete: on	Suppression auto : activée
+Auto-delete: off	Suppression auto : désactivée
+Contact Management	Gestion des contacts
+Delete after %d days	Supprimer après %d jours
+Removed %d old contact(s)	%d ancien(s) contact(s) supprimé(s)
+Pulse	Impulsion
+Gentle	Doux
+Long	Long
+Heartbeat	Battement de cœur
+Keep north up	Nord en haut
+The mesh stays put instead of slowly turning around you.	Le réseau reste fixe au lieu de tourner lentement autour de vous.
+Map file	Fichier de carte
+Folder tiles only	Tuiles des dossiers seulement
+rename the file to the folder name	renommez le fichier comme le dossier
+not a PNG raster archive	pas une archive raster PNG
+file incomplete, copy it again	fichier incomplet, recopiez-le
+not a PMTiles v3 file	pas un fichier PMTiles v3
+No map files found. Copy a PNG archive to\n/maps/<name>/<name>.pmtiles	Aucun fichier de carte trouvé. Copiez une archive PNG dans\n/maps/<nom>/<nom>.pmtiles
+Zoom: map levels only	Zoom : niveaux de la carte seulement
+No map levels found on the SD card	Aucun niveau de carte trouvé sur la carte SD
+%d mA · %u:%02u left	%d mA · %u:%02u left
+%d mA · %u:%02u to full	%d mA · %u:%02u to full
+%d.%d °C · %u cycles · health %u%%	%d.%d °C · %u cycles · health %u%%
+%u / %u mAh · %s left	%u / %u mAh · %s left
+%u / %u mAh · %s left at your usage	%u / %u mAh · %s left at your usage
+%u / %u mAh · full in %s	%u / %u mAh · full in %s
+@ mention	@ mention
+A click for each keypress and each turn of the knob.	A click for each keypress and each turn of the knob.
+Apply to the fuel gauge	Apply to the fuel gauge
+Back to 1500 mAh	Back to 1500 mAh
+Back to safe defaults	Back to safe defaults
+Battery at %d%%: charge soon	Battery at %d%%: charge soon
+Battery care	Battery care
+Battery care: kept at 80%, running from USB	Battery care: kept at 80%, running from USB
+Battery empty: switching off in 10 s to protect it. Plug in to cancel.	Battery empty: switching off in 10 s to protect it. Plug in to cancel.
+Battery low: %d%%	Battery low: %d%%
+Battery pack	Battery pack
+Battery temperature OK, charging again	Battery temperature OK, charging again
+Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.	Buzzes for the same messages as the sound below, even with Sound off. Do Not Disturb and muted channels stay still.
+Capacity (mAh)	Capacity (mAh)
+Charge current	Charge current
+Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.	Charge faster than 750 mA?\nLilyGo advises against it for this battery: it heats the cell and wears it out, and a damaged LiPo can swell or catch fire. Only where you can keep an eye on it.
+Charge limits	Charge limits
+Charge only to 80%	Charge only to 80%
+Charge to	Charge to
+Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.	Charge to 4.35 V?\nOnly for high-voltage (LiHV) cells. It overcharges a normal LiPo, which can then swell, fail or catch fire.
+Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.	Charge up to this temperature?\nAbove 45 °C a LiPo wears out fast while charging, and the risk of swelling or fire goes up.
+Charging %d mA · %d mW	Charging %d mA · %d mW
+Charging back to the safe defaults	Charging back to the safe defaults
+Charging paused: battery too cold	Charging paused: battery too cold
+Charging paused: battery too cold (%d °C)	Charging paused: battery too cold (%d °C)
+Charging paused: battery too hot	Charging paused: battery too hot
+Charging paused: battery too hot (%d °C)	Charging paused: battery too hot (%d °C)
+Charging paused: too cold	Charging paused: too cold
+Charging paused: too hot	Charging paused: too hot
+Charging: switch-off cancelled	Charging: switch-off cancelled
+Drawing %d mA · %d mW	Drawing %d mA · %d mW
+Faster charging heats and wears the battery.	Faster charging heats and wears the battery.
+Fuel gauge not answering	Fuel gauge not answering
+Fuel gauge set. It relearns the pack over the next charges.	Fuel gauge set. It relearns the pack over the next charges.
+It resumes 3 °C below the limit.	It resumes 3 °C below the limit.
+Kept at 80% (battery care)	Kept at 80% (battery care)
+Key click	Key click
+Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the Pager off the table turns the screen on (a locked Pager shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Light	Light
+LilyGo fits 1500 mAh. Change it only for a different pack.	LilyGo fits 1500 mAh. Change it only for a different pack.
+Low battery warning	Low battery warning
+Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the Pager stays silent (no sound, no vibration). Picking it up ends it. Keeps the motion sensor on, a little more power.
+Never below freezing. It resumes 3 °C above the limit.	Never below freezing. It resumes 3 °C above the limit.
+Once	Once
+Powering off… hold the power key to switch on	Powering off… hold the power key to switch on
+Quiet when face down	Quiet when face down
+Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.	Set the battery to %u mAh?\nOnly if that is the pack fitted. The percentage and time left are recalculated and settle over the next full charge.
+Starting the motion sensor…	Starting the motion sensor…
+Stop charging above	Stop charging above
+Stop charging below	Stop charging below
+Stopping lower gives a little less capacity and a longer battery life.	Stopping lower gives a little less capacity and a longer battery life.
+Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.	Stops charging at 80%, starts again below 75%. Kept off a full charge, the pack lasts noticeably longer; turn it off before a long day away from power.
+Strength	Strength
+Strong	Strong
+Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.	Switch the temperature guard off?\nThe Pager then charges a hot or frozen battery. Charging below 0 °C damages the cell inside and can cause a short later; charging it hot risks swelling and fire.
+The defaults are the safe ones for this battery. Anything past them asks first.	The defaults are the safe ones for this battery. Anything past them asks first.
+The fuel gauge did not take the new capacity	The fuel gauge did not take the new capacity
+The fuel gauge is already set to this	The fuel gauge is already set to this
+The percentage comes from the battery's fuel gauge, which learns the pack by itself.	The percentage comes from the battery's fuel gauge, which learns the pack by itself.
+Twice	Twice
+Use anyway	Use anyway
+Used today %d mAh · yesterday %s	Used today %d mAh · yesterday %s
+Wake when picked up	Wake when picked up
+Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.	Warns with a vibration at 20%, again at 10%, and switches the Pager off at 3%, so the battery is never run flat.
+last 5 min charging	last 5 min charging
+last 5 min drawing	last 5 min drawing
+not known	not known
+Picture dimming	Assombrissement de l'image
+Wallpaper dimming	Assombrissement du fond d'écran
+Darker with Night, lighter with Day, so the text on it stays readable.	Plus sombre en Nuit, plus claire en Jour, pour que le texte reste lisible.
+Asking the time server	Interrogation du serveur de temps
+Auto-delete old contacts	Supprimer automatiquement les anciens contacts
+Buzz for new messages, even with Sound off. Respects Do Not Disturb.	Vibre pour les nouveaux messages, même avec le son coupé. Respecte Ne pas déranger.
+Connections	Connexions
+Days	Jours
+Deletes contacts not heard from in the number of days below. Favourites are never deleted.	Supprime les contacts non entendus depuis le nombre de jours ci-dessous. Les favoris ne sont jamais supprimés.
+Downloaded to this computer, and kept in this browser.	Téléchargé sur cet ordinateur et conservé dans ce navigateur.
+Import from this computer	Importer depuis cet ordinateur
+In the browser, the connection is set in the page bar: Connect reaches your node over Bluetooth, USB or Wi-Fi.	Dans le navigateur, la connexion se règle dans la barre de la page : Connecter joint votre nœud par Bluetooth, USB ou Wi-Fi.
+In the browser, the connection is set in the page bar: Connect reaches your node over Wi-Fi, USB or Bluetooth.	Dans le navigateur, la connexion se règle dans la barre de la page : Connecter joint votre nœud par Wi-Fi, USB ou Bluetooth.
+No position yet. Allow this page to use your location when the browser asks.	Pas encore de position. Autorisez cette page à utiliser votre position quand le navigateur le demande.
+Not heard from for this many days, 1 to 999.	Non entendu depuis ce nombre de jours, de 1 à 999.
+Pattern	Motif
+Plays once for a message, twice for a DM, three times for an @ mention. Tap one to feel it.	Une fois pour un message, deux fois pour un DM, trois fois pour une @ mention. Touchez-en un pour le ressentir.
+Remove old contacts	Supprimer les anciens contacts
+The map downloads through this computer's own network. Your node's Wi-Fi is set on the node.	La carte se télécharge par le réseau de cet ordinateur. Le Wi-Fi de votre nœud se règle sur le nœud.
+Vibrate	Vibrer
+Vibration	Vibration
+Your node's own Bluetooth and pairing code are set on the node.	Le Bluetooth et le code d'appairage de votre nœud se règlent sur le nœud.
+Accents and umlauts	Accents and umlauts
+Back (deletes while typing)	Back (deletes while typing)
+Back from a text field; unlock	Back from a text field; unlock
+Backspace	Backspace
+Caps Lock while typing	Caps Lock while typing
+Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.	Do Not Disturb until you switch it off. Holding Shift does the same from anywhere.
+Edit in Settings > Quick replies	Edit in Settings > Quick replies
+Fn + Backspace	Fn + Backspace
+Fn + Enter	Fn + Enter
+Fn + Shift	Fn + Shift
+Fn + click	Fn + click
+Fn + turn	Fn + turn
+Hold Backspace	Hold Backspace
+Hold Enter	Hold Enter
+Hold Fn	Hold Fn
+Hold H / Hold S	Hold H / Hold S
+Hold Shift	Hold Shift
+Hold Space	Hold Space
+Hold a letter	Hold a letter
+Hold knob	Hold knob
+In a chat: jump to new messages	In a chat: jump to new messages
+Keys and shortcuts	Keys and shortcuts
+Keys and the knob do nothing until you hold Backspace.	Keys and the knob do nothing until you hold Backspace.
+Knob	Knob
+Launcher options / Control panel	Launcher options / Control panel
+Lock the screen	Lock the screen
+M  C  H  A  S	M  C  H  A  S
+More actions (like a long press)	More actions (like a long press)
+Move, click to select	Move, click to select
+Moving aurora stays still while Battery saver is on (Settings > Battery).	Moving aurora stays still while Battery saver is on (Settings > Battery).
+N	N
+Next tab, or scroll inside a screen	Next tab, or scroll inside a screen
+Pan the map; adjust a slider	Pan the map; adjust a slider
+Quiet now	Quiet now
+Quiet now (Do Not Disturb) on / off	Quiet now (Do Not Disturb) on / off
+Quiet now: off	Quiet now: off
+Quiet now: on (hold Shift again to end)	Quiet now: on (hold Shift again to end)
+Screen brightness	Screen brightness
+Shift + click	Shift + click
+Shift + click: brightness	Shift + click: brightness
+Shift + click: volume	Shift + click: volume
+Shift + turn	Shift + turn
+Special characters while typing	Special characters while typing
+Switch the knob to volume	Switch the knob to volume
+Tabs (Settings > Keyboard)	Tabs (Settings > Keyboard)
+This help	This help
+Turn the knob • click to insert	Turn the knob • click to insert
+Turn to scroll, click or any key to close.	Turn to scroll, click or any key to close.
+W A S D,  Q / E	W A S D,  Q / E
+Mute colours and animations	Mute colours and animations
+Mute colours and animations sets these for now.	Mute colours and animations sets these for now.
+Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.	Nothing moves, no boot animation, quiet colours and solid panels. Your other colour choices come back when it is off.
+Slate	Slate
+Sepia	Sepia
+Grey	Grey
+Sage	Sage
+Dusk	Dusk
+Tone the whole screen	Tone the whole screen
+Off: only the accent takes the tone.	Off: only the accent takes the tone.
+%d book(s)	%d livre(s)
+A chapter is missing from this book	Il manque un chapitre dans ce livre
+Apply the new look? The Pager restarts to apply it.	Appliquer le nouveau look ? Le Pager redémarre.
+Back to book	Retour au livre
+Books	Livres
+Cannot open this book	Impossible d'ouvrir ce livre
+Cannot read this file	Impossible de lire ce fichier
+Cannot show this image	Impossible d'afficher cette image
+Chapters	Chapitres
+Continue reading	Reprendre la lecture
+Earlier chapters	Chapitres précédents
+Ebook needs a newer firmware	L'ebook nécessite un firmware plus récent
+End of book	Fin du livre
+External LoRa antenna	Antenne LoRa externe
+Images	Images
+Later chapters	Chapitres suivants
+No books. Add .epub files to this app's folder.	Aucun livre. Ajoutez des fichiers .epub au dossier de l'app.
+No data from the receiver	Aucune donnée du récepteur
+No login reply, tracing instead…	Pas de réponse de connexion, traçage à la place…
+No readable chapters	Aucun chapitre lisible
+Not an epub	Pas un epub
+Opening...	Ouverture...
+Receiver is talking at	Le récepteur parle à
+Section	Section
+Start of book	Début du livre
+The book index is too large	L'index du livre est trop grand
+This book is compressed. Repack it with scripts/ebook-prep.py	Ce livre est compressé. Reconditionnez-le avec scripts/ebook-prep.py
+Use external	Utiliser l'externe
+Use the external antenna?\nOnly with an antenna fitted: transmitting into an empty socket can destroy the radio.	Utiliser l'antenne externe ?\nUniquement avec une antenne branchée : émettre sur une prise vide peut détruire la radio.
+Uses the external socket instead of the on-board antenna. Only with an antenna fitted.	Utilise la prise externe au lieu de l'antenne intégrée. Uniquement avec une antenne branchée.
+View image	Voir l'image
+image	image
+reacted	a réagi
+reacted to	a réagi à
+Hide MediaMesh and TAK texts	Masquer les textes MediaMesh et TAK
+Apps like MeshCore Open TAK send photos, voice and team tracking as text. Messages between apps are dropped, and the rest become a short label such as Photo. A connected phone app still gets everything.	Des applis comme MeshCore Open TAK envoient photos, voix et suivi d'équipe sous forme de texte. Les messages entre applis sont ignorés et les autres deviennent une courte étiquette comme Photo. Une appli de téléphone connectée reçoit toujours tout.
+MediaMesh and TAK texts will be hidden	Les textes MediaMesh et TAK seront masqués
+MediaMesh and TAK texts will be shown	Les textes MediaMesh et TAK seront affichés
+Photo	Photo
+Voice message	Message vocal
+Push-to-talk	Push-to-talk
+Encrypted message	Message chiffré
+30 sec	30 s
+Peak -- dBm	Pic -- dBm
+Peak %d dBm @ %.1f MHz	Pic %d dBm @ %.1f MHz
+peak %d @ %.1f	pic %d @ %.1f
+Asleep: tap screen or 🤍 to wake	En veille : touchez l'écran ou 🤍 pour réveiller
+Receiving %s\n%lu / %lu bytes	Réception de %s\n%lu / %lu octets
+Sending %s\n%lu / %lu bytes	Envoi de %s\n%lu / %lu octets
+File Transfer	Transfert de fichiers
+U	N
+Unread only	Non lus seulement
+No unread chats	Aucun chat non lu
+No unread channels	Aucun canal non lu
+No unread direct chats	Aucune discussion directe non lue
+Recent	Récents
+Smileys	Smileys
+People	Personnes
+Nature	Nature
+Food	Nourriture
+Activity	Activités
+Travel	Voyages
+Objects	Objets
+Symbols	Symboles
+Flags	Drapeaux
+Chars	Signes
+Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.	Lifting the device off the table turns the screen on (a locked device shows its lock screen). Only after it lay still, so it stays dark in a bag or pocket.
+Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.	Lying face down, the screen goes off and the device stays silent. Picking it up ends it. Keeps the motion sensor on, a little more power.
+Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.	Warns at 20%, again at 10%, and enters deep sleep at 3% so the battery is never run flat.
+\n%d%%, about %lu s left	\n%d%%, environ %lu s restantes
+\n%d%%, about %lu min left	\n%d%%, environ %lu min restantes
+Keep this orientation?\nIf the screen does not answer your taps, leave it: it goes back to portrait in %d s.	Garder cette orientation ?\nSi l'écran ne répond pas au toucher, n'y touchez plus : il repasse en portrait dans %d s.
+Back to portrait… restarting	Retour en portrait… redémarrage
+Keep	Garder
+Orientation kept	Orientation gardée

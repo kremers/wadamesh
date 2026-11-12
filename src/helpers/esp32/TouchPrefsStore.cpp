@@ -1,5 +1,7 @@
 #include "TouchPrefsStore.h"
 #include "TouchPrefsSchema.h"
+#include "../TimeZones.h"     // the picker's zones and their POSIX TZ strings (#699)
+#include "GpsBaudPrefs.h"
 
 #if defined(ESP32)
 
@@ -169,6 +171,9 @@ static void cfgSetDefaults(TouchCfg& c) {
   c.beta_updates      = 0;      // OFF: stable update channel (opt-in to beta/test firmware)
   c.report_ping       = 0;      // OFF: no anonymous install count until asked for (v64)
   c.condense_nav      = 0;      // OFF: bottom nav bar + labelled Home launchers (v66, #592)
+  c.ct_purge_on       = 0;      // OFF: contacts stay until deleted (v72, #719)
+  c.ct_purge_days     = TOUCH_CT_PURGE_DEFAULT_DAYS;
+  c.chats_unread_only = 0;      // OFF: Chats lists every thread (v73, #824)
   c.report_done_n     = 0;      // no beta reported on yet
   c.boot_advert       = 0;      // OFF: no automatic advert on boot — opt-in (#76)
   c.console_mode      = 0;      // OFF: boot into the graphical UI (CONSOLE_MODE.md)
@@ -268,9 +273,9 @@ static void cfgLoadOrMigrate() {
         // v2->v3: a manual hour offset used to mean "CET base + offset". Preserve
         // that under the new zone picker by mapping such users onto the Custom
         // (UTC-offset) zone, so their clock doesn't jump to CET. 0xFE is resolved
-        // to the real Custom index on the first touchPrefsGetTimezone() call (the
-        // zone count isn't known here). offset 0 stays zone 0 (Europe) = unchanged.
-        if (stored_version < 3 && s_cfg.time_offs != 0) s_cfg.tz_zone = 0xFE;
+        // to the Custom id on the first touchPrefsGetTimezone() call (and written
+        // back then). offset 0 stays zone 0 (Europe) = unchanged.
+        if (stored_version < 3 && s_cfg.time_offs != 0) s_cfg.tz_zone = TimeZones::STORED_MIGRATE_TO_CUSTOM;
         // v18: keyboard navigation is now OFF by default (it was force-enabled at v15, but it
         // complicated the touch UX more than it helped). Reset existing installs to off ONCE so
         // they match the new default; the user's later explicit on/off then persists (fires only
@@ -329,6 +334,11 @@ static void cfgLoadOrMigrate() {
         }
 #endif
         if (stored_version < 66) s_cfg.condense_nav = 0;   // v66 new trailing field: never stored before
+        if (stored_version < 72) {   // v72 new trailing fields: never stored before
+          s_cfg.ct_purge_on = 0;
+          s_cfg.ct_purge_days = TOUCH_CT_PURGE_DEFAULT_DAYS;
+        }
+        if (stored_version < 73) s_cfg.chats_unread_only = 0;   // v73 new trailing field: never stored before
         if (stored_version < 29 && s_cfg.ui_scale == 0) s_cfg.ui_scale = 1;   // bump old 100% default -> Large (150%)
         if (stored_version < 30) s_cfg.boot_advert = 0;   // #76 new trailing field: advert-on-boot off by default
         // v51 new trailing field. Anything older than 51 never stored it, so it
@@ -821,82 +831,40 @@ bool touchPrefsSetSoundFile(int slot, const char* path) {
 
 int touchPrefsGetTimeOffsetHours() {
   if (!s_begun) touchPrefsBegin();
-  int v = (int)s_cfg.time_offs;
-  if (v < -23) v = -23;
-  if (v >  23) v =  23;
-  return v;
+  return TimeZones::clampOffsetHours((int)s_cfg.time_offs);
 }
 bool touchPrefsSetTimeOffsetHours(int hours) {
-  if (hours < -23) hours = -23;
-  if (hours >  23) hours =  23;
+  hours = TimeZones::clampOffsetHours(hours);
   if (!s_begun) touchPrefsBegin();
   s_cfg.time_offs = (int8_t)hours;
   return cfgFlush();
 }
-// Curated time zones, each with the correct POSIX DST rules for that region, so
-// non-European users get the right time year-round instead of the CET base + EU
-// DST dates. Index 0 (Europe/CET) is the default and matches the old behaviour.
-struct TzZone { const char* label; const char* posix; };
-static const TzZone TZ_ZONES[] = {
-  { "Europe (CET/CEST)",   "CET-1CEST,M3.5.0,M10.5.0/3" },
-  { "UK (GMT/BST)",        "GMT0BST,M3.5.0/1,M10.5.0" },
-  { "UTC",                 "UTC0" },
-  { "US Eastern",          "EST5EDT,M3.2.0,M11.1.0" },
-  { "US Central",          "CST6CDT,M3.2.0,M11.1.0" },
-  { "US Mountain",         "MST7MDT,M3.2.0,M11.1.0" },
-  { "US Arizona (no DST)", "MST7" },
-  { "US Pacific",          "PST8PDT,M3.2.0,M11.1.0" },
-  { "US Alaska",           "AKST9AKDT,M3.2.0,M11.1.0" },
-  { "US Hawaii",           "HST10" },
-  { "Canada Atlantic",     "AST4ADT,M3.2.0,M11.1.0" },
-  { "Brazil (Brasilia)",   "<-03>3" },
-  { "India (IST)",         "IST-5:30" },
-  { "China (CST)",         "CST-8" },
-  { "Japan (JST)",         "JST-9" },
-  { "Sydney (AEST/AEDT)",  "AEST-10AEDT,M10.1.0,M4.1.0/3" },
-};
-static const int TZ_ZONE_N = (int)(sizeof(TZ_ZONES) / sizeof(TZ_ZONES[0]));
-
-int touchPrefsTimezoneCount() { return TZ_ZONE_N + 1; }   // +1 = "Custom (UTC offset)"
-
-const char* touchPrefsTimezoneLabel(int idx) {
-  if (idx >= 0 && idx < TZ_ZONE_N) return TZ_ZONES[idx].label;
-  if (idx == TZ_ZONE_N)            return "Custom (UTC offset)";
-  return "";
-}
+// The zones, their permanent ids and their POSIX strings live in helpers/TimeZones.h
+// (unit-tested on the host, including this stored-bytes -> TZ path).
+int touchPrefsTimezoneCount() { return TimeZones::COUNT; }
+int touchPrefsTimezoneAt(int row) { return TimeZones::idAt(row); }
+const char* touchPrefsTimezoneLabel(int id) { return TimeZones::label(id); }
 
 uint8_t touchPrefsGetTimezone() {
   if (!s_begun) touchPrefsBegin();
-  uint8_t z = s_cfg.tz_zone;
-  if (z == 0xFE) {   // v2->v3 migration sentinel: had a manual offset -> Custom zone
-    z = (uint8_t)(touchPrefsTimezoneCount() - 1);
-    s_cfg.tz_zone = z;
+  if (s_cfg.tz_zone == TimeZones::STORED_MIGRATE_TO_CUSTOM) {   // v2->v3: had a manual offset
+    s_cfg.tz_zone = (uint8_t)TimeZones::CUSTOM;
     cfgFlush();
   }
-  if (z >= (uint8_t)touchPrefsTimezoneCount()) z = 0;   // stale/garbage -> default
-  return z;
+  return (uint8_t)TimeZones::resolveStored(s_cfg.tz_zone);   // stale/garbage -> default
 }
 
-void touchPrefsSetTimezone(uint8_t idx) {
+void touchPrefsSetTimezone(uint8_t id) {
   if (!s_begun) touchPrefsBegin();
-  if (idx >= (uint8_t)touchPrefsTimezoneCount()) idx = 0;
-  s_cfg.tz_zone = idx;
+  s_cfg.tz_zone = (uint8_t)TimeZones::resolveStored(id);
   cfgFlush();
 }
 
 void touchPrefsBuildLocalTz(char* out, int out_cap) {
   if (!out || out_cap <= 0) return;
-  const uint8_t z = touchPrefsGetTimezone();
-  if (z < (uint8_t)TZ_ZONE_N) {
-    snprintf(out, out_cap, "%s", TZ_ZONES[z].posix);
-    return;
-  }
-  // "Custom (UTC offset)": a fixed offset, no DST. POSIX std-offset is the
-  // negation of the UTC offset (it's the time to ADD to local to reach UTC), so
-  // UTC-7 -> "<-07>7", UTC+2 -> "<+02>-2".
-  const int off = touchPrefsGetTimeOffsetHours();
-  if (off == 0) { snprintf(out, out_cap, "UTC0"); return; }
-  snprintf(out, out_cap, "<%+03d>%d", off, -off);
+  if (!s_begun) touchPrefsBegin();
+  (void)touchPrefsGetTimezone();   // resolves the one-time migration sentinel first
+  TimeZones::buildFromStored(s_cfg.tz_zone, s_cfg.time_offs, out, out_cap);
 }
 
 uint32_t touchPrefsGetLockTextColor() {
@@ -1549,6 +1517,40 @@ bool touchPrefsSetCondenseNav(bool on) {
   s_cfg.condense_nav = on ? 1 : 0;
   return cfgFlush();
 }
+// Remove old contacts (v72, #719): Settings > Contact Management.
+bool touchPrefsGetContactPurge() {
+  if (!s_begun) touchPrefsBegin();
+  return s_cfg.ct_purge_on != 0;
+}
+bool touchPrefsSetContactPurge(bool on) {
+  if (!s_begun) touchPrefsBegin();
+  s_cfg.ct_purge_on = on ? 1 : 0;
+  return cfgFlush();
+}
+uint16_t touchPrefsGetContactPurgeDays() {
+  if (!s_begun) touchPrefsBegin();
+  uint16_t d = s_cfg.ct_purge_days;
+  if (d < TOUCH_CT_PURGE_MIN_DAYS) d = TOUCH_CT_PURGE_MIN_DAYS;
+  if (d > TOUCH_CT_PURGE_MAX_DAYS) d = TOUCH_CT_PURGE_MAX_DAYS;
+  return d;
+}
+bool touchPrefsSetContactPurgeDays(uint16_t days) {
+  if (days < TOUCH_CT_PURGE_MIN_DAYS) days = TOUCH_CT_PURGE_MIN_DAYS;
+  if (days > TOUCH_CT_PURGE_MAX_DAYS) days = TOUCH_CT_PURGE_MAX_DAYS;
+  if (!s_begun) touchPrefsBegin();
+  s_cfg.ct_purge_days = days;
+  return cfgFlush();
+}
+// The Chats "U" (unread only) chip (v73, #824).
+bool touchPrefsGetChatsUnreadOnly() {
+  if (!s_begun) touchPrefsBegin();
+  return s_cfg.chats_unread_only != 0;
+}
+bool touchPrefsSetChatsUnreadOnly(bool on) {
+  if (!s_begun) touchPrefsBegin();
+  s_cfg.chats_unread_only = on ? 1 : 0;
+  return cfgFlush();
+}
 uint8_t touchPrefsGetNavPos() {
   if (!s_begun) touchPrefsBegin();
   return s_cfg.condense_nav <= TOUCH_NAV_LEFT ? s_cfg.condense_nav : TOUCH_NAV_BOTTOM;
@@ -1829,6 +1831,16 @@ bool touchPrefsSetUiRotation(uint8_t rot) {
   s_cfg.ui_rotation = previous;
   return false;
 }
+
+#if defined(HELTEC_LORA_V4_R8)
+// V4-R8 landscape is kept only once the user has tapped "Keep" on it (UITask's
+// rotation check): "rot_ok" holds the rotation they kept, "rot_try" is set while a
+// landscape boot waits for that tap, so a boot that never got it goes back to portrait.
+uint8_t touchPrefsGetRotKept()          { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("rot_ok", 0xFF); }
+void    touchPrefsSetRotKept(uint8_t r) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("rot_ok", r); }
+bool    touchPrefsGetRotTrying()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("rot_try", 0) != 0; }
+void    touchPrefsSetRotTrying(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("rot_try", on ? 1 : 0); }
+#endif
 
 uint16_t touchPrefsGetBattFullMv() {
   if (!s_begun) touchPrefsBegin();
@@ -2381,6 +2393,28 @@ bool touchPrefsGetSoundDirect() {
   return s_prefs.getUChar("snd_dm", 1) != 0;
 }
 void touchPrefsSetSoundDirect(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("snd_dm", on ? 1 : 0); }
+// Vibration motor (T-Display P4). Independent of the master Sound switch -- that is the point
+// of a "silent but buzz" setting -- but chooses events with the same per-type switches above.
+// Off until turned on: a fresh install should not start buzzing unasked. The Pager
+// (DRV2605) is the exception: buzzing for messages is what a pager is for.
+bool touchPrefsGetVibrate() {
+  if (!s_begun) touchPrefsBegin();
+#if defined(TLORA_PAGER)
+  return s_prefs.getUChar("vibrate", 1) != 0;
+#else
+  return s_prefs.getUChar("vibrate", 0) != 0;
+#endif
+}
+void touchPrefsSetVibrate(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("vibrate", on ? 1 : 0); }
+uint8_t touchPrefsGetVibratePattern() {
+  if (!s_begun) touchPrefsBegin();
+  const uint8_t p = s_prefs.getUChar("vib_pat", TOUCH_VIB_PULSE);
+  return p < TOUCH_VIB_COUNT ? p : TOUCH_VIB_PULSE;
+}
+void touchPrefsSetVibratePattern(uint8_t pat) {
+  if (!s_begun) touchPrefsBegin();
+  prefsPutUChar("vib_pat", pat < TOUCH_VIB_COUNT ? pat : TOUCH_VIB_PULSE);
+}
 // Drop incoming text messages whose body is a single character. Mesh spam is
 // overwhelmingly 1-byte payloads (cheapest possible airtime per message), and a
 // 1-character message is never something a person meant to send. Off by default:
@@ -2390,6 +2424,12 @@ bool touchPrefsGetIgnoreTinyMsgs() {
   return s_prefs.getUChar("ign_tiny", 0) != 0;
 }
 void touchPrefsSetIgnoreTinyMsgs(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ign_tiny", on ? 1 : 0); }
+// Off by default for the same reason: it changes what other people's messages look like.
+bool touchPrefsGetHideTakTexts() {
+  if (!s_begun) touchPrefsBegin();
+  return s_prefs.getUChar("hide_tak", 0) != 0;
+}
+void touchPrefsSetHideTakTexts(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("hide_tak", on ? 1 : 0); }
 uint8_t touchPrefsGetP4KbLight(uint8_t def) {
   if (!s_begun) touchPrefsBegin();
   return s_prefs.getUChar("p4kb_light", def);
@@ -2516,10 +2556,61 @@ uint8_t touchPrefsGetScreensaverBatterySecs() {
 void touchPrefsSetScreensaverBatterySecs(uint8_t secs) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ssaver_bat", secs > 60 ? 60 : secs); }
 bool touchPrefsGetScreensaverAlwaysOnPower() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("ssaver_pwr", 1) != 0; }
 void touchPrefsSetScreensaverAlwaysOnPower(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ssaver_pwr", on ? 1 : 0); }
+bool touchPrefsGetScreensaverNorthUp() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("ssaver_north", 0) != 0; }
+void touchPrefsSetScreensaverNorthUp(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ssaver_north", on ? 1 : 0); }
 bool touchPrefsGetLockPreviews() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("lock_prev", 1) != 0; }
 void touchPrefsSetLockPreviews(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("lock_prev", on ? 1 : 0); }
 bool touchPrefsGetGlanceWhenLocked() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("glance_lck", 0) != 0; }
 void touchPrefsSetGlanceWhenLocked(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("glance_lck", on ? 1 : 0); }
+#if defined(TLORA_PAGER)   // the Pager's DRV2605 vibration motor
+bool touchPrefsGetVibrateInput()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("vib_in", 0) != 0; }
+void touchPrefsSetVibrateInput(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("vib_in", on ? 1 : 0); }
+// vib_in: 0 off, 1 strong (what the old on/off switch stored), 2 light.
+uint8_t touchPrefsGetVibrateKeyLevel() {
+  if (!s_begun) touchPrefsBegin();
+  const uint8_t v = s_prefs.getUChar("vib_in", 0);
+  return v == 1 ? 2 : v == 2 ? 1 : 0;
+}
+void touchPrefsSetVibrateKeyLevel(uint8_t l) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("vib_in", l >= 2 ? 1 : l == 1 ? 2 : 0); }
+uint8_t touchPrefsGetVibrateStrength() { if (!s_begun) touchPrefsBegin(); const uint8_t v = s_prefs.getUChar("vib_str", 2); return v > 2 ? 2 : v; }
+void touchPrefsSetVibrateStrength(uint8_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("vib_str", v > 2 ? 2 : v); }
+uint8_t touchPrefsGetVibratePattern(uint8_t kind) {
+  if (!s_begun) touchPrefsBegin();
+  static const char* const k[3] = { "vib_pm", "vib_pd", "vib_pn" };
+  static const uint8_t dflt[3] = { 1, 2, 3 };   // once, twice, three times: what it always did
+  if (kind > 2) kind = 0;
+  return s_prefs.getUChar(k[kind], dflt[kind]);
+}
+void touchPrefsSetVibratePattern(uint8_t kind, uint8_t p) {
+  if (!s_begun) touchPrefsBegin();
+  static const char* const k[3] = { "vib_pm", "vib_pd", "vib_pn" };
+  if (kind <= 2) prefsPutUChar(k[kind], p);
+}
+uint16_t touchPrefsGetChargeMa()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUShort("chg_ma", 704); }
+void     touchPrefsSetChargeMa(uint16_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUShort("chg_ma", v); }
+uint16_t touchPrefsGetChargeMv()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUShort("chg_mv", 4288); }
+void     touchPrefsSetChargeMv(uint16_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUShort("chg_mv", v); }
+uint8_t  touchPrefsGetChargeTmax()      { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("chg_tmax", 45); }
+void     touchPrefsSetChargeTmax(uint8_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("chg_tmax", v); }
+uint8_t  touchPrefsGetChargeTmin()      { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("chg_tmin", 0); }
+void     touchPrefsSetChargeTmin(uint8_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("chg_tmin", v); }
+bool touchPrefsGetChargeCare()          { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("chg_care", 0) != 0; }
+void touchPrefsSetChargeCare(bool on)   { if (!s_begun) touchPrefsBegin(); prefsPutUChar("chg_care", on ? 1 : 0); }
+uint32_t touchPrefsGetBattDayKey()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUInt("bat_day", 0); }
+void     touchPrefsSetBattDayKey(uint32_t k) { if (!s_begun) touchPrefsBegin(); prefsPutUInt("bat_day", k); }
+uint32_t touchPrefsGetBattDayMah()        { if (!s_begun) touchPrefsBegin(); return s_prefs.getUInt("bat_mah", 0xFFFF0000u); }
+void     touchPrefsSetBattDayMah(uint32_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUInt("bat_mah", v); }
+uint32_t touchPrefsGetBattUse()          { if (!s_begun) touchPrefsBegin(); return s_prefs.getUInt("bat_use", 0); }
+void     touchPrefsSetBattUse(uint32_t v) { if (!s_begun) touchPrefsBegin(); prefsPutUInt("bat_use", v); }
+#endif
+#if defined(TLORA_PAGER) || defined(HAS_THINKNODE_M9) || defined(HAS_M9_IMU)
+bool touchPrefsGetLowBattWarn()         { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("low_batt", 1) != 0; }
+void touchPrefsSetLowBattWarn(bool on)  { if (!s_begun) touchPrefsBegin(); prefsPutUChar("low_batt", on ? 1 : 0); }
+bool touchPrefsGetFaceDownQuiet()       { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("face_down", 0) != 0; }
+void touchPrefsSetFaceDownQuiet(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("face_down", on ? 1 : 0); }
+bool touchPrefsGetPickupWake()         { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("pick_wake", 0) != 0; }
+void touchPrefsSetPickupWake(bool on)  { if (!s_begun) touchPrefsBegin(); prefsPutUChar("pick_wake", on ? 1 : 0); }
+#endif
 bool touchPrefsGetGlanceEnabled()   { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("glance_en", 1) != 0; }
 void touchPrefsSetGlanceEnabled(bool on)    { if (!s_begun) touchPrefsBegin(); prefsPutUChar("glance_en", on ? 1 : 0); }
 uint8_t touchPrefsGetChatIcons() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("chat_icons", 0) ? 1 : 0; }
@@ -2534,6 +2625,19 @@ uint8_t touchPrefsGetColorStyle() {
 void touchPrefsSetColorStyle(uint8_t style) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("col_style", style > TOUCH_LOOK_PASTEL ? TOUCH_LOOK_REGULAR : style); }
 bool touchPrefsGetRainbow() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("col_rb", 0) != 0; }
 void touchPrefsSetRainbow(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("col_rb", on ? 1 : 0); }
+bool touchPrefsGetMuted() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("ui_mute", 0) != 0; }
+void touchPrefsSetMuted(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ui_mute", on ? 1 : 0); }
+uint8_t touchPrefsGetMuteTone() {
+  if (!s_begun) touchPrefsBegin();
+  const uint8_t v = s_prefs.getUChar("ui_mute_tn", TOUCH_MUTE_TONE_SLATE);
+  return v < TOUCH_MUTE_TONE_N ? v : TOUCH_MUTE_TONE_SLATE;
+}
+void touchPrefsSetMuteTone(uint8_t tone) {
+  if (!s_begun) touchPrefsBegin();
+  prefsPutUChar("ui_mute_tn", tone < TOUCH_MUTE_TONE_N ? tone : TOUCH_MUTE_TONE_SLATE);
+}
+bool touchPrefsGetMuteTint() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("ui_mute_wh", 1) != 0; }
+void touchPrefsSetMuteTint(bool whole) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("ui_mute_wh", whole ? 1 : 0); }
 bool touchPrefsGetGlassTiles() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("glass", 1) != 0; }
 void touchPrefsSetGlassTiles(bool on) { if (!s_begun) touchPrefsBegin(); prefsPutUChar("glass", on ? 1 : 0); }
 bool touchPrefsGetAntExtAlways() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("ant_ext", 0) == 1; }
@@ -2582,6 +2686,22 @@ bool touchPrefsSetBackgroundImage(const char* path) {
   s_begun = s_prefs.begin(TOUCH_NS, true);
   return ok;
 }
+// Absent until chosen: TOUCH_DIM_STRONG, the dimming every picture had before.
+static uint8_t prefsDimLevel(const char* key) {
+  if (!s_begun) touchPrefsBegin();
+  const uint8_t v = s_prefs.getUChar(key, TOUCH_DIM_STRONG);
+  return v > TOUCH_DIM_STRONG ? TOUCH_DIM_STRONG : v;
+}
+uint8_t touchPrefsGetBackgroundDim() { return prefsDimLevel("bg_dim"); }
+void touchPrefsSetBackgroundDim(uint8_t level) {
+  if (!s_begun) touchPrefsBegin();
+  prefsPutUChar("bg_dim", level > TOUCH_DIM_STRONG ? TOUCH_DIM_STRONG : level);
+}
+uint8_t touchPrefsGetLockDim() { return prefsDimLevel("lock_dim"); }
+void touchPrefsSetLockDim(uint8_t level) {
+  if (!s_begun) touchPrefsBegin();
+  prefsPutUChar("lock_dim", level > TOUCH_DIM_STRONG ? TOUCH_DIM_STRONG : level);
+}
 
 #if defined(HAS_TANMATSU)   // only the Tanmatsu has the message LED — keep S3 (T-Deck/V4) bins unchanged
 bool touchPrefsGetMsgLed() { if (!s_begun) touchPrefsBegin(); return s_prefs.getUChar("msg_led", 1) != 0; }   // default ON
@@ -2613,6 +2733,11 @@ uint8_t touchPrefsGetSoundVolume() {
   // percentage than the T-Deck's I2S amp/Tanmatsu's ES8156 — 70% clips into
   // uncomfortable territory, so this board gets a quieter first-boot default.
   uint8_t v = s_prefs.getUChar("snd_vol", 50);
+#elif defined(THINKNODE_M9_BUZZER_PIN)
+  // The M9 piezo had no volume before; 100% is the drive it always had, so an
+  // M9 that never set a volume keeps sounding the way it did. Same macro as the
+  // LEDC chime and the Volume row in UITask.cpp.
+  uint8_t v = s_prefs.getUChar("snd_vol", 100);
 #else
   uint8_t v = s_prefs.getUChar("snd_vol", 70);
 #endif
@@ -2911,11 +3036,32 @@ bool touchPrefsSetSetupDone(bool done) {
   return ok;
 }
 
+// The speed the GPS probe last locked on while the user had not picked one. Its own
+// key, outside the settings blob, so an older firmware never reads it as a choice.
+// The rules are in GpsBaudPrefs.h (host-tested with the probe).
+static const char* LK_GPS_BAUD_FOUND = "gps_bd_fd";
+
 uint32_t touchPrefsGetGpsBaud(uint32_t fallback) {
   if (!s_begun) touchPrefsBegin();
-  // 0 = never set -> caller's compile-time default. A real configured baud is
-  // always non-zero, so this preserves the old "absent key -> fallback" result.
-  return s_cfg.gps_baud != 0 ? s_cfg.gps_baud : fallback;
+  // 0 = never set -> the speed the probe found, else the caller's compile-time
+  // default. A real configured baud is always non-zero, so this preserves the
+  // old "absent key -> fallback" result where nothing was ever found.
+  if (s_cfg.gps_baud != 0) return s_cfg.gps_baud;
+  const uint32_t found = s_prefs.isKey(LK_GPS_BAUD_FOUND) ? s_prefs.getUInt(LK_GPS_BAUD_FOUND, 0) : 0;
+  return GpsBaudPrefs::effective(0, found, fallback);
+}
+
+bool touchPrefsGpsBaudChosen() {
+  if (!s_begun) touchPrefsBegin();
+  return s_cfg.gps_baud != 0;
+}
+
+void touchPrefsSetGpsBaudFound(uint32_t baud) {
+  if (!s_begun) touchPrefsBegin();
+  if (!GpsBaudPrefs::sane(baud)) return;
+  const bool have = s_prefs.isKey(LK_GPS_BAUD_FOUND);
+  if (!GpsBaudPrefs::foundNeedsWrite(baud, have, have ? s_prefs.getUInt(LK_GPS_BAUD_FOUND, 0) : 0)) return;
+  prefsPutUInt(LK_GPS_BAUD_FOUND, baud);
 }
 
 bool touchPrefsSetGpsBaud(uint32_t baud) {
@@ -2943,11 +3089,18 @@ static int backupKeys(BkKey* out, int cap) {
   };
   add(KEY_CFG, 'b');
   static const char* const k_u8[] = {
-    "snd_msg", "snd_men", "snd_dm", "snd_vol", "ign_tiny", "dsc_evict", "dsc_hops",
+    "snd_msg", "snd_men", "snd_dm", "snd_vol", "vibrate", "vib_pat", "ign_tiny", "hide_tak", "dsc_evict", "dsc_hops",
     "ent_send", "clk_12h", "nav_mbk", "tb_rev", "tb_edgesc", "lock_off", "glance_lck",
     "glance_en", "msg_led", "dnd_en", "dnd_ss", "dnd_es", "kbd_bl",
+#if defined(TLORA_PAGER)
+    "vib_in", "vib_str", "vib_pm", "vib_pd", "vib_pn",   // the Pager's vibration settings ("vibrate" is above)
+    "chg_care",
+#endif
+#if defined(TLORA_PAGER) || defined(HAS_THINKNODE_M9) || defined(HAS_M9_IMU)
+    "low_batt", "face_down", "pick_wake",                // low-battery warning and IMU motion quiet/wake modes
+#endif
     "chat_icons", "col_more", "col_style", "col_rb", "bg_kind", "gps_save", "gps_every",
-    "glass",   // NOT "ant_ext": a restore must never point a unit at an empty antenna socket
+    "glass", "bg_dim", "lock_dim",   // NOT "ant_ext": a restore must never point a unit at an empty antenna socket
   };
   for (const char* k : k_u8) add(k, 'c');
   add("map_cap", 's');
@@ -2976,7 +3129,11 @@ static int backupKeys(BkKey* out, int cap) {
   }
   return n;
 }
-static constexpr int kBackupKeyCap = 160;
+// Room for every key backupKeys() lists. add() drops whatever does not fit, without a
+// word, and the Wi-Fi slots come last: on 2026-10-26 the list was 158 keys on most
+// boards and 167 on the Pager (its vibration, battery care and motion keys), so a
+// Pager backup lost its last saved Wi-Fi slots. Keep well clear of the count.
+static constexpr int kBackupKeyCap = 192;
 static constexpr size_t kBackupBlobMax = 2048;
 
 static void bkPrintJsonStr(Print& out, const char* s) {

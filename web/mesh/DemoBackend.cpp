@@ -24,6 +24,7 @@
 #include <array>
 #include <string>
 #include <math.h>
+#include <stdlib.h>
 #include "WebLocation.h"
 
 namespace {
@@ -132,6 +133,26 @@ public:
       c.gps_lon = absCoord(_home_lon, d.dlon);
       ev.beContact(c, false, 0);
     }
+    // WADA_DEMO_CONTACTS="name|name|...": extra chat contacts for a scripted run, so a
+    // headless test can show a name the cast does not have (accents, emoji).
+    if (const char* extra = getenv("WADA_DEMO_CONTACTS")) {
+      const std::string all(extra);
+      size_t at = 0;
+      while (at <= all.size()) {
+        size_t bar = all.find('|', at);
+        if (bar == std::string::npos) bar = all.size();
+        const std::string nm = all.substr(at, bar - at);
+        at = bar + 1;
+        if (nm.empty()) continue;
+        ContactInfo c{};
+        demoKey(nm.c_str(), c.id.pub_key);
+        StrHelper::strncpy(c.name, nm.c_str(), sizeof(c.name));
+        c.type = ADV_TYPE_CHAT;
+        c.out_path_len = 0;
+        c.last_advert_timestamp = c.lastmod = now - 60;
+        ev.beContact(c, false, 0);
+      }
+    }
     addChannel(0, "Public", nullptr);
     addChannel(1, "#emergency", "#emergency");
   }
@@ -159,13 +180,19 @@ public:
         File f = SPIFFS.open(k_seed_marker, "w");
         if (f) { f.print("1"); f.close(); }
       }
-      _next_chatter = now_ms + 45000;
+      // WADA_DEMO_CHATTER_MS=N: a Public line every N ms (the first after N), so a
+      // headless script can have messages arrive at known times (navigation tests).
+      // WADA_DEMO_CHATTER_BURST=N: the first N lines 20 ms apart (a long channel history).
+      if (const char* ev = getenv("WADA_DEMO_CHATTER_MS")) _chatter_every = (uint32_t)strtoul(ev, nullptr, 10);
+      if (const char* ev = getenv("WADA_DEMO_CHATTER_BURST")) _chatter_burst = (uint32_t)strtoul(ev, nullptr, 10);
+      _next_chatter = now_ms + (_chatter_burst ? 20u : _chatter_every ? _chatter_every : 45000);
       _next_advert = now_ms + 20000;
     }
     if (_seeded && (int32_t)(now_ms - _next_chatter) >= 0) {
       const char* line = k_public_chatter[_chatter_i++ % (sizeof k_public_chatter / sizeof *k_public_chatter)];
       _ev->beChannelMessage(0, 0, line, 1 + (uint8_t)random(3), (int8_t)(4 * (random(12) - 3)), (int8_t)(-60 - random(45)));
-      _next_chatter = now_ms + 60000 + (uint32_t)random(30000);
+      _next_chatter = now_ms + (_chatter_burst ? (_chatter_burst--, 20u)
+                                : _chatter_every ? _chatter_every : 60000 + (uint32_t)random(30000));
     }
     if (_seeded && (int32_t)(now_ms - _next_advert) >= 0) {
       const DemoContact& d = k_contacts[_advert_i++ % 5];   // the active five re-advert
@@ -215,7 +242,22 @@ public:
 
   int requestStatus(const ContactInfo& c) override {
     if (c.type != ADV_TYPE_REPEATER && c.type != ADV_TYPE_ROOM) return MSG_SEND_FAILED;
+    if (silentTelemetry()) Serial.printf("[demo] status request to %s at %u ms\n", c.name, (unsigned)millis());
     queue(Pending::Status, c.id.pub_key, 0, 900 + (uint32_t)random(800));
+    return c.out_path_len == OUT_PATH_UNKNOWN ? MSG_SEND_SENT_FLOOD : MSG_SEND_SENT_DIRECT;
+  }
+  // Telemetry is not part of the demo: the request fails at once (the default). For
+  // tests, WADA_DEMO_SILENT_TELEMETRY=1 makes it a request that goes out and whose
+  // reply is lost on the air, so the UI's single-flight request slot stays taken
+  // until its expiry (src/helpers/UiRequestSlot.h; web/scripts/ui-slot-expiry.wada).
+  static bool silentTelemetry() {
+    const char* e = getenv("WADA_DEMO_SILENT_TELEMETRY");
+    return e && e[0] == '1';
+  }
+  int requestTelemetry(const ContactInfo& c) override {
+    if (!silentTelemetry() || (c.type != ADV_TYPE_REPEATER && c.type != ADV_TYPE_ROOM && c.type != ADV_TYPE_SENSOR))
+      return MSG_SEND_FAILED;
+    Serial.printf("[demo] telemetry request to %s at %u ms: no reply will come\n", c.name, (unsigned)millis());
     return c.out_path_len == OUT_PATH_UNKNOWN ? MSG_SEND_SENT_FLOOD : MSG_SEND_SENT_DIRECT;
   }
   // Repeater / room admin (the repeater admin app): any password is the admin's, an
@@ -450,7 +492,7 @@ private:
 
   MeshBackendEvents* _ev = nullptr;
   bool _started = false, _seeded = false;
-  uint32_t _t0 = 0, _next_chatter = 0, _next_advert = 0;
+  uint32_t _t0 = 0, _next_chatter = 0, _next_advert = 0, _chatter_every = 0, _chatter_burst = 0;
   unsigned _chatter_i = 0, _advert_i = 0, _reply_i = 0;
   std::vector<Pending> _pending;
   std::vector<std::array<uint8_t, PUB_KEY_SIZE>> _logged_in;
